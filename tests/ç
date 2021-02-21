@@ -1,0 +1,6 @@
+from cartuli import Card
+
+
+def test_card():
+    card = Card("c1.jpg")
+    assert card.two_sides
