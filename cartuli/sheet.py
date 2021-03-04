@@ -5,7 +5,7 @@ from typing import List, Union
 # from reportlab.lib.utils import ImageReader
 # from reportlab.pdfgen import canvas
 
-from . import Card, Position, Size, A4, mm
+from . import Card, Coordinates, Position, Size, A4, mm
 
 
 class Sheet(object):
@@ -26,6 +26,7 @@ class Sheet(object):
 
         self.__front_canvas = []
         self.__back_canvas = []
+        self.__cards_per_sheet = None
 
     @property
     def margin(self):
@@ -47,15 +48,23 @@ class Sheet(object):
         """Return sheet card size."""
         return self.__card_size
 
+    @property
     def cards_per_sheet(self) -> Size:
         """Return the amount of cards that fits in each sheet."""
-        width = (self.size.width - 2*self.margin + self.padding) / (self.card_size.width + self.padding)
-        height = (self.size.height - 2*self.margin + self.padding) / (self.card_size.height + self.padding)
-        return Size(int(width), int(height))
+        if self.__cards_per_sheet is None:
+            width = (self.size.width - 2*self.margin + self.padding) / (self.card_size.width + self.padding)
+            height = (self.size.height - 2*self.margin + self.padding) / (self.card_size.height + self.padding)
+            self.__cards_per_sheet = Size(int(width), int(height))
+        return self.__cards_per_sheet
 
-    def __card_location(self, position: Position) -> Position:
-        """Return the card location based on a position."""
-        pass
+    def card_position(self, coordinates: Coordinates) -> Position:
+        """Return the card position based on a coordinates."""
+        if (self.cards_per_sheet.width <= coordinates.x or
+                self.cards_per_sheet.height <= coordinates.y):
+            raise ValueError(f"Invalid position, maximun position is {Position(*self.cards_per_sheet)}")
+        x = self.margin + coordinates.x*(self.card_size.width + self.padding)
+        y = self.margin + coordinates.y*(self.card_size.height + self.padding)
+        return Position(x, y)
 
     def add_cards(self, cards: Union[Card, List[Card]]):
         """Add cards to sheet."""

@@ -1,6 +1,6 @@
 """Measures package."""
-from collections import namedtuple
-
+from dataclasses import dataclass
+from math import isclose
 from reportlab.lib import pagesizes
 from reportlab.lib.units import mm, cm, inch
 
@@ -13,10 +13,42 @@ __all__ = [
 ]
 
 
-Size = namedtuple('Size', ('width', 'height'))
+@dataclass(frozen=True)
+class Size:
+    """Size class in any measure."""
+
+    width: float
+    height: float
+
+    def __eq__(self, other):
+        return isclose(self.width, other.width) and isclose(self.height, other.height)
+
+    def __str__(self):
+        return f"({self.width}, {self.height})"
+
+    def __iter__(self):
+        return (v for v in (self.width, self.height))
 
 
-Position = namedtuple('Position', ('x', 'y'))
+@dataclass(frozen=True)
+class Position:
+    """Position class in any measure."""
+
+    x: float
+    y: float
+
+    def __eq__(self, other):
+        return isclose(self.x, other.x) and isclose(self.y, other.y)
+
+    def __str__(self):
+        return f"({self.x}, {self.y})"
+
+    def __iter__(self):
+        return (v for v in (self.x, self.y))
+
+
+class Coordinates(Position):
+    pass
 
 
 A1 = Size(*pagesizes.A1)
