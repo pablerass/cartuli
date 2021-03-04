@@ -1,6 +1,6 @@
 import pytest
 
-from cartuli import Card, Sheet, A4
+from cartuli import Card, Sheet, Size, A4, mm
 
 
 def test_card():
@@ -18,3 +18,10 @@ def test_card_sheet():
 
     with pytest.raises(ValueError):
         sheet.add_cards(Card("f1.jpg", size=Card.CHIMERA_SIZE))
+
+def test_card_calculations():
+    #assert Sheet("t", card_size=Card.STANDARD_SIZE).cards_per_sheet() == Size(3, 3)
+    #assert Sheet("t", card_size=Card.MINI_CHIMERA_SIZE).cards_per_sheet() == Size(4, 4)
+    #assert Sheet("t", card_size=Card.MINI_USA_SIZE,
+                 #margin=2*mm, padding=0*mm).cards_per_sheet() == Size(5, 4)
+    assert Sheet("t", card_size=Card.TAROT_SIZE).cards_per_sheet() == Size(2, 2)

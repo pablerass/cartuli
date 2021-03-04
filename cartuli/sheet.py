@@ -11,8 +11,8 @@ from . import Card, Position, Size, A4, mm
 class Sheet(object):
     """Sheet that contains multiple cards to be printed."""
 
-    DEFAULT_MARGIN = 10*mm
-    DEFAULT_PADDING = 10*mm
+    DEFAULT_MARGIN = 5*mm
+    DEFAULT_PADDING = 4*mm
     DEFAULT_SIZE = A4
 
     def __init__(self, name: str, /, card_size: Size = Card.STANDARD_SIZE, margin: int = DEFAULT_MARGIN,
@@ -28,6 +28,16 @@ class Sheet(object):
         self.__back_canvas = []
 
     @property
+    def margin(self):
+        """Return sheet margins."""
+        return self.__margin
+
+    @property
+    def padding(self):
+        """Return distance between cards."""
+        return self.__padding
+
+    @property
     def size(self):
         """Return sheet size."""
         return self.__size
@@ -39,9 +49,11 @@ class Sheet(object):
 
     def cards_per_sheet(self) -> Size:
         """Return the amount of cards that fits in each sheet."""
-        pass
+        width = (self.size.width - 2*self.margin + self.padding) / (self.card_size.width + self.padding)
+        height = (self.size.height - 2*self.margin + self.padding) / (self.card_size.height + self.padding)
+        return Size(int(width), int(height))
 
-    def _card_location(self, position: Position) -> Position:
+    def __card_location(self, position: Position) -> Position:
         """Return the card location based on a position."""
         pass
 
