@@ -1,4 +1,5 @@
 """Sheet module."""
+from math import ceil
 from typing import List, Union
 
 # from PIL import Image
@@ -24,8 +25,8 @@ class Sheet(object):
         self.__padding = padding
         self.__size = size
 
-        self.__front_canvas = []
-        self.__back_canvas = []
+        self.__front_images = []
+        self.__back_images = []
         self.__cards_per_sheet = None
 
     @property
@@ -66,6 +67,23 @@ class Sheet(object):
         y = self.margin + coordinates.y*(self.card_size.height + self.padding)
         return Position(x, y)
 
+    def __report_card_position(self, coordinates: Coordinates) -> Position:
+        card_position = self.card_position(coordinates)
+        x = self.size.width - card_position.x - self.card_size.width
+        y = self.size.height - card_position.y - self.card_size.height
+        return Position(x, y)
+
+    @property
+    def pages(self):
+        """Return the current number of pages."""
+        cards_per_page = self.cards_per_sheet.width * self.cards_per_sheet.height
+        return ceil(len(self.__front_images) / cards_per_page)
+
+    @property
+    def two_sided(self):
+        """Return if the card has two sieds."""
+        return any([i is not None for i in self.__back_images])
+
     def add_cards(self, cards: Union[Card, List[Card]]):
         """Add cards to sheet."""
         if isinstance(cards, Card):
@@ -74,6 +92,9 @@ class Sheet(object):
         for i, card in enumerate(cards):
             if card.size is not None and card.size != self.__card_size:
                 raise ValueError(f"{card.size} does not fit in sheet")
+
+            self.__front_images.append(card.front_image)
+            self.__back_images.append(card.back_image)
 
     def create_pdf(self):
         """Create the sheet PDF with all added cards."""

@@ -29,6 +29,6 @@ class Card:
     TAROT_SIZE: ClassVar[Size] = Size(70*mm, 120*mm)
 
     @property
-    def two_sides(self) -> bool:
+    def two_sided(self) -> bool:
         """Return if the card in one or two sided."""
         return self.back_image is not None
