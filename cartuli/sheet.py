@@ -1,10 +1,12 @@
 """Sheet module."""
+import logging
+
 from math import ceil
 from typing import List, Union
 
-# from PIL import Image
-# from reportlab.lib.utils import ImageReader
-# from reportlab.pdfgen import canvas
+from PIL import Image
+from reportlab.lib.utils import ImageReader
+from reportlab.pdfgen import canvas
 
 from . import Card, Coordinates, Position, Size, A4, mm
 
@@ -81,9 +83,9 @@ class Sheet(object):
 
     def card_coordinates(self, card_number: int) -> Coordinates:
         """Return the card coordinates based on its sequence number."""
-        card_number_in_page = card_number % (self.cards_per_page.width * self.cards_per_page.height)
-        return Coordinates(card_number_in_page % self.cards_per_page.width,
-                           card_number_in_page // self.cards_per_page.width + 1)
+        card_number_in_page = (card_number - 1) % (self.cards_per_page.width * self.cards_per_page.height) + 1
+        return Coordinates((card_number_in_page - 1) % self.cards_per_page.width + 1,
+                           (card_number_in_page - 1) // self.cards_per_page.width + 1)
 
     def card_position(self, coordinates: Coordinates) -> Position:
         """Return the card position based on a coordinates."""
@@ -96,7 +98,7 @@ class Sheet(object):
 
     def __report_card_position(self, coordinates: Coordinates) -> Position:
         card_position = self.card_position(coordinates)
-        x = self.size.width - card_position.x - self.card_size.width
+        x = card_position.x
         y = self.size.height - card_position.y - self.card_size.height
         return Position(x, y)
 
@@ -118,6 +120,8 @@ class Sheet(object):
         for i, card in enumerate(cards):
             if card.size is not None and card.size != self.__card_size:
                 raise ValueError(f"{card.size} does not fit in sheet")
+            if card.back_image is not None:
+                raise ValueError("Only one side cards are supported")
 
             self.__cards.append(card)
 
@@ -125,12 +129,20 @@ class Sheet(object):
         """Return the cards that belong to a page."""
         return self.cards[(page - 1)*self.num_cards_per_page:page*self.num_cards_per_page]
 
+    def create_pdf(self) -> None:
+        """Create the sheet PDF with all added cards."""
+        logger = logging.getLogger('cartuli.Sheet.create_pdf')
 
-# Working example
-# c = canvas.Canvas(f"{name}-{page}.pdf", pagesize=self.size)
-# card = Image.open("./000.jpg").rotate(180)
-# c.drawImage(ImageReader(card), 0, c.height - 122*mm, 73*mm, 122*mm)
-# c.drawImage('001.jpg', 0, 0, 73*mm, 122*mm)
-# c.showPage()
-# c.drawImage('back.jpg', 0, 0, 73*mm, 122*mm)
-# c.save()
+        for page in range(1, self.pages + 1):
+            page_canvas = canvas.Canvas(f"{self.name}-{page}.pdf", pagesize=tuple(self.size))
+            for i, card in enumerate(self.page_cards(page)):
+                num_card = i + 1
+                card_image = Image.open(card.front_image)
+                card_coordinates = self.card_coordinates(num_card)
+                card_position = self.__report_card_position(card_coordinates)
+                logger.debug(f"Adding {num_card} card {card.front_image} to page {page} at {card_coordinates} position")
+                page_canvas.drawImage(ImageReader(card_image),
+                                      card_position.x, card_position.y,
+                                      self.card_size.width, self.card_size.height)
+            page_canvas.save()
+            logger.debug(f"Created {page} PDF")

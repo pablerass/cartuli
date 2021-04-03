@@ -53,8 +53,16 @@ def test_sheet_card_coordinates():
     card_sheet = Sheet("t", card_size=Card.STANDARD_SIZE,
                        margin=5*mm, padding=4*mm)
     assert card_sheet.card_coordinates(1) == Coordinates(1, 1)
+    assert card_sheet.card_coordinates(2) == Coordinates(2, 1)
+    assert card_sheet.card_coordinates(3) == Coordinates(3, 1)
     assert card_sheet.card_coordinates(4) == Coordinates(1, 2)
+    assert card_sheet.card_coordinates(5) == Coordinates(2, 2)
+    assert card_sheet.card_coordinates(6) == Coordinates(3, 2)
     assert card_sheet.card_coordinates(7) == Coordinates(1, 3)
+    assert card_sheet.card_coordinates(8) == Coordinates(2, 3)
+    assert card_sheet.card_coordinates(9) == Coordinates(3, 3)
+    assert card_sheet.card_coordinates(10) == Coordinates(1, 1)
+    assert card_sheet.card_coordinates(18) == Coordinates(3, 3)
 
 
 def test_sheet_card_position():
@@ -78,36 +86,38 @@ def test_sheet_page_cards():
         Card("f07")
     ]
     cards_set_2 = [
-        Card("f08", "b08"),
+        # Card("f08", "b08"),
+        Card("f08"),
         Card("f09"),
-        Card("f10", "b10"),
+        # Card("f10", "b10"),
+        Card("f10"),
         Card("f11")
     ]
     sheet = Sheet("t", card_size=Card.STANDARD_SIZE)
     num_cards_per_page = sheet.num_cards_per_page
 
     assert sheet.pages == 0
-    assert not sheet.two_sided
+    # assert not sheet.two_sided
     assert sheet.page_cards(1) == []
 
     sheet.add_cards(cards_set_1)
     assert sheet.pages == 1
-    assert not sheet.two_sided
+    # assert not sheet.two_sided
     assert sheet.page_cards(1) == cards_set_1
     assert sheet.page_cards(2) == []
 
     sheet.add_cards(cards_set_2)
     assert sheet.pages == 2
-    assert sheet.two_sided
+    # assert sheet.two_sided
     assert sheet.page_cards(1) == (cards_set_1 + cards_set_2)[:num_cards_per_page]
     assert sheet.page_cards(2) == (cards_set_1 + cards_set_2)[num_cards_per_page:]
 
     sheet.add_cards(cards_set_1)
     assert sheet.pages == 2
-    assert sheet.two_sided
+    # assert sheet.two_sided
     assert sheet.page_cards(1) == (cards_set_1 + cards_set_2)[:num_cards_per_page]
     assert sheet.page_cards(2) == (cards_set_1 + cards_set_2 + cards_set_1)[num_cards_per_page:]
 
     sheet.add_cards(cards_set_1)
     assert sheet.pages == 3
-    assert sheet.two_sided
+    # assert sheet.two_sided
