@@ -16,8 +16,8 @@ class Sheet(object):
     DEFAULT_PADDING = 4*mm
     DEFAULT_SIZE = A4
 
-    def __init__(self, name: str, /, card_size: Size = Card.STANDARD_SIZE, margin: int = DEFAULT_MARGIN,
-                 padding: int = DEFAULT_PADDING, size: Size = DEFAULT_SIZE):
+    def __init__(self, name: str, /, card_size: Size = Card.STANDARD_SIZE, margin: float = DEFAULT_MARGIN,
+                 padding: float = DEFAULT_PADDING, size: Size = DEFAULT_SIZE):
         """Create Sheet object."""
         self.__name = name
         self.__card_size = card_size
@@ -25,46 +25,73 @@ class Sheet(object):
         self.__padding = padding
         self.__size = size
 
-        self.__front_images = []
-        self.__back_images = []
-        self.__cards_per_sheet = None
+        self.__cards = []
+        self.__cards_per_page = None
+        self.__num_cards_per_page = None
 
     @property
-    def margin(self):
+    def name(self) -> str:
+        """Return sheet name."""
+        return self.__name
+
+    @property
+    def margin(self) -> float:
         """Return sheet margins."""
         return self.__margin
 
     @property
-    def padding(self):
+    def padding(self) -> float:
         """Return distance between cards."""
         return self.__padding
 
     @property
-    def size(self):
+    def size(self) -> Size:
         """Return sheet size."""
         return self.__size
 
     @property
-    def card_size(self):
+    def card_size(self) -> Size:
         """Return sheet card size."""
         return self.__card_size
 
     @property
-    def cards_per_sheet(self) -> Size:
-        """Return the amount of cards that fits in each sheet."""
-        if self.__cards_per_sheet is None:
+    def cards(self) -> List[Card]:
+        """Return current sheet cards."""
+        return self.__cards
+
+    @property
+    def cards_per_page(self) -> Size:
+        """Return the amount of cards that fits in each page."""
+        if self.__cards_per_page is None:
             width = (self.size.width - 2*self.margin + self.padding) / (self.card_size.width + self.padding)
             height = (self.size.height - 2*self.margin + self.padding) / (self.card_size.height + self.padding)
-            self.__cards_per_sheet = Size(int(width), int(height))
-        return self.__cards_per_sheet
+            self.__cards_per_page = Size(int(width), int(height))
+        return self.__cards_per_page
+
+    @property
+    def num_cards_per_page(self) -> Size:
+        """Return the amount of cards that fits in each page."""
+        if self.__num_cards_per_page is None:
+            self.__num_cards_per_page = self.cards_per_page.width * self.cards_per_page.height
+        return self.__num_cards_per_page
+
+    def card_page(self, card_number: int) -> int:
+        """Return the card page based on its sequence number."""
+        return card_number // (self.cards_per_page.width * self.cards_per_page.height) + 1
+
+    def card_coordinates(self, card_number: int) -> Coordinates:
+        """Return the card coordinates based on its sequence number."""
+        card_number_in_page = card_number % (self.cards_per_page.width * self.cards_per_page.height)
+        return Coordinates(card_number_in_page % self.cards_per_page.width,
+                           card_number_in_page // self.cards_per_page.width + 1)
 
     def card_position(self, coordinates: Coordinates) -> Position:
         """Return the card position based on a coordinates."""
-        if (self.cards_per_sheet.width <= coordinates.x or
-                self.cards_per_sheet.height <= coordinates.y):
-            raise ValueError(f"Invalid position, maximun position is {Position(*self.cards_per_sheet)}")
-        x = self.margin + coordinates.x*(self.card_size.width + self.padding)
-        y = self.margin + coordinates.y*(self.card_size.height + self.padding)
+        if (self.cards_per_page.width < coordinates.x or
+                self.cards_per_page.height < coordinates.y):
+            raise ValueError(f"Invalid position, maximun position is {Position(*self.cards_per_page)}")
+        x = self.margin + (coordinates.x - 1)*(self.card_size.width + self.padding)
+        y = self.margin + (coordinates.y - 1)*(self.card_size.height + self.padding)
         return Position(x, y)
 
     def __report_card_position(self, coordinates: Coordinates) -> Position:
@@ -74,17 +101,16 @@ class Sheet(object):
         return Position(x, y)
 
     @property
-    def pages(self):
+    def pages(self) -> int:
         """Return the current number of pages."""
-        cards_per_page = self.cards_per_sheet.width * self.cards_per_sheet.height
-        return ceil(len(self.__front_images) / cards_per_page)
+        return ceil(len(self.__cards) / self.num_cards_per_page)
 
     @property
-    def two_sided(self):
-        """Return if the card has two sieds."""
-        return any([i is not None for i in self.__back_images])
+    def two_sided(self) -> bool:
+        """Return if the card has two sides."""
+        return any([card.back_image is not None for card in self.cards])
 
-    def add_cards(self, cards: Union[Card, List[Card]]):
+    def add_cards(self, cards: Union[Card, List[Card]]) -> None:
         """Add cards to sheet."""
         if isinstance(cards, Card):
             cards = (cards,)
@@ -93,16 +119,15 @@ class Sheet(object):
             if card.size is not None and card.size != self.__card_size:
                 raise ValueError(f"{card.size} does not fit in sheet")
 
-            self.__front_images.append(card.front_image)
-            self.__back_images.append(card.back_image)
+            self.__cards.append(card)
 
-    def create_pdf(self):
-        """Create the sheet PDF with all added cards."""
-        pass
+    def page_cards(self, page: int) -> List[Card]:
+        """Return the cards that belong to a page."""
+        return self.cards[(page - 1)*self.num_cards_per_page:page*self.num_cards_per_page]
 
 
 # Working example
-# c = canvas.Canvas(f"{name}.pdf", pagesize=A4)
+# c = canvas.Canvas(f"{name}-{page}.pdf", pagesize=self.size)
 # card = Image.open("./000.jpg").rotate(180)
 # c.drawImage(ImageReader(card), 0, c.height - 122*mm, 73*mm, 122*mm)
 # c.drawImage('001.jpg', 0, 0, 73*mm, 122*mm)
