@@ -107,10 +107,10 @@ class Sheet(object):
         """Return the current number of pages."""
         return ceil(len(self.__cards) / self.num_cards_per_page)
 
-    @property
-    def two_sided(self) -> bool:
-        """Return if the card has two sides."""
-        return any([card.back_image is not None for card in self.cards])
+    # @property
+    # def two_sided(self) -> bool:
+    #     """Return if the card has two sides."""
+    #     return any([card.back_image is not None for card in self.cards])
 
     def add_cards(self, cards: Union[Card, List[Card]]) -> None:
         """Add cards to sheet."""
