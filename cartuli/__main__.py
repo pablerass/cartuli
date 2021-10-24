@@ -15,9 +15,9 @@ def parse_args(args: List[str] = None) -> argparse.Namespace:
 
     parser = argparse.ArgumentParser(description='Create a PDF with a list of images')
 
-    parser.add_argument('-n', '--name', type=str, required=True,
+    parser.add_argument('-o', '--output-file', type=str, required=False, default='output',
                         help='Sheet name')
-    parser.add_argument('-i', '--images', type=str, nargs='+',
+    parser.add_argument('-i', '--images', type=str, nargs='+', required=True,
                         help='Images to add to sheet')
     parser.add_argument('-v', '--verbose', action='count', default=0,
                         help="Display verbose output")
@@ -39,10 +39,10 @@ def main(args=None):
         logging.getLogger('PIL').propagate = False
     logger = logging.getLogger('cartuli')
 
-    sheet = Sheet(args.name, card_size=Card.TAROT_SIZE)
+    sheet = Sheet(card_size=Card.TAROT_SIZE)
     sheet.add_cards([Card(image) for image in args.images])
-    sheet.create_pdf()
-    logger.info(f'Created {args.name} sheet with {len(args.images)} images')
+    sheet.create_pdf(args.output_file)
+    logger.info(f'Created {args.output_file} sheet with {len(args.images)} images')
 
     return 0
 

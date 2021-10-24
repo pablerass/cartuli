@@ -18,10 +18,9 @@ class Sheet(object):
     DEFAULT_PADDING = 4*mm
     DEFAULT_SIZE = A4
 
-    def __init__(self, name: str, /, card_size: Size = Card.STANDARD_SIZE, margin: float = DEFAULT_MARGIN,
+    def __init__(self, /, card_size: Size = Card.STANDARD_SIZE, margin: float = DEFAULT_MARGIN,
                  padding: float = DEFAULT_PADDING, size: Size = DEFAULT_SIZE):
         """Create Sheet object."""
-        self.__name = name
         self.__card_size = card_size
         self.__margin = margin
         self.__padding = padding
@@ -129,12 +128,12 @@ class Sheet(object):
         """Return the cards that belong to a page."""
         return self.cards[(page - 1)*self.num_cards_per_page:page*self.num_cards_per_page]
 
-    def create_pdf(self) -> None:
+    def create_pdf(self, base_name: str) -> None:
         """Create the sheet PDF with all added cards."""
         logger = logging.getLogger('cartuli.Sheet.create_pdf')
 
         for page in range(1, self.pages + 1):
-            page_canvas = canvas.Canvas(f"{self.name}-{page}.pdf", pagesize=tuple(self.size))
+            page_canvas = canvas.Canvas(f"{base_name}-{page}.pdf", pagesize=tuple(self.size))
             for i, card in enumerate(self.page_cards(page)):
                 num_card = i + 1
                 card_image = Image.open(card.front_image)

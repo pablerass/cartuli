@@ -1,48 +1,29 @@
 import pytest
 
-from math import isclose
-
-from cartuli import Card, Coordinates, Position, Sheet, Size, A4, mm
-
-
-def test_card():
-    card1 = Card("c1.jpg")
-    card2 = Card("f1.jpg", "b1.jpg")
-
-    assert not card1.two_sided
-    assert card2.two_sided
-
-
-def test_sheet_add_card():
-    sheet = Sheet("test", card_size=Card.STANDARD_SIZE)
-    assert sheet.card_size == Card.STANDARD_SIZE
-    assert sheet.size == A4
-
-    with pytest.raises(ValueError):
-        sheet.add_cards(Card("f1.jpg", size=Card.CHIMERA_SIZE))
+from cartuli import Card, Coordinates, Position, Sheet, Size, mm
 
 
 def test_sheet_cards_per_page():
-    sheet_standard = Sheet("t", card_size=Card.STANDARD_SIZE)
+    sheet_standard = Sheet(card_size=Card.STANDARD_SIZE)
     assert sheet_standard.cards_per_page == Size(3, 3)
     assert sheet_standard.num_cards_per_page == 9
 
-    sheet_chimera = Sheet("t", card_size=Card.MINI_CHIMERA_SIZE)
+    sheet_chimera = Sheet(card_size=Card.MINI_CHIMERA_SIZE)
     assert sheet_chimera.cards_per_page == Size(4, 4)
     assert sheet_chimera.num_cards_per_page == 16
 
-    sheet_mini_usa = Sheet("t", card_size=Card.MINI_USA_SIZE,
+    sheet_mini_usa = Sheet(card_size=Card.MINI_USA_SIZE,
                            margin=2*mm, padding=0*mm)
     assert sheet_mini_usa.cards_per_page == Size(5, 4)
     assert sheet_mini_usa.num_cards_per_page == 20
 
-    sheet_tarot = Sheet("t", card_size=Card.TAROT_SIZE)
+    sheet_tarot = Sheet(card_size=Card.TAROT_SIZE)
     assert sheet_tarot.cards_per_page == Size(2, 2)
     assert sheet_tarot.num_cards_per_page == 4
 
 
 def test_sheet_card_page():
-    card_sheet = Sheet("t", card_size=Card.STANDARD_SIZE,
+    card_sheet = Sheet(card_size=Card.STANDARD_SIZE,
                        margin=5*mm, padding=4*mm)
     assert card_sheet.card_page(4) == 1
     assert card_sheet.card_page(10) == 2
@@ -50,7 +31,7 @@ def test_sheet_card_page():
 
 
 def test_sheet_card_coordinates():
-    card_sheet = Sheet("t", card_size=Card.STANDARD_SIZE,
+    card_sheet = Sheet(card_size=Card.STANDARD_SIZE,
                        margin=5*mm, padding=4*mm)
     assert card_sheet.card_coordinates(1) == Coordinates(1, 1)
     assert card_sheet.card_coordinates(2) == Coordinates(2, 1)
@@ -66,7 +47,7 @@ def test_sheet_card_coordinates():
 
 
 def test_sheet_card_position():
-    card_sheet = Sheet("t", card_size=Card.STANDARD_SIZE,
+    card_sheet = Sheet(card_size=Card.STANDARD_SIZE,
                        margin=5*mm, padding=4*mm)
     assert card_sheet.card_position(Coordinates(1, 1)) == Position(5*mm, 5*mm)
     assert card_sheet.card_position(Coordinates(3, 1)) == Position(140*mm, 5*mm)
@@ -93,7 +74,7 @@ def test_sheet_page_cards():
         Card("f10"),
         Card("f11")
     ]
-    sheet = Sheet("t", card_size=Card.STANDARD_SIZE)
+    sheet = Sheet(card_size=Card.STANDARD_SIZE)
     num_cards_per_page = sheet.num_cards_per_page
 
     assert sheet.pages == 0
