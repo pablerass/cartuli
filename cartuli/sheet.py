@@ -6,7 +6,8 @@ from PIL import Image
 from reportlab.lib.utils import ImageReader
 from reportlab.pdfgen import canvas
 
-from . import Card, Coordinates, Position, Size, A4, mm
+from .card import Card, CardSize
+from .measure import Coordinates, Position, Size, A4, mm
 
 
 class Sheet(object):
@@ -16,7 +17,7 @@ class Sheet(object):
     DEFAULT_PADDING = 4*mm
     DEFAULT_SIZE = A4
 
-    def __init__(self, /, card_size: Size = Card.STANDARD_SIZE, margin: float = DEFAULT_MARGIN,
+    def __init__(self, /, card_size: Size = CardSize.STANDARD_SIZE, margin: float = DEFAULT_MARGIN,
                  padding: float = DEFAULT_PADDING, size: Size = DEFAULT_SIZE):
         """Create Sheet object."""
         self.__card_size = card_size
