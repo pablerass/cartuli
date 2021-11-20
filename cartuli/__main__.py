@@ -4,12 +4,10 @@ import argparse
 import logging
 import sys
 
-from typing import List
-
 from cartuli import Sheet, Card
 
 
-def parse_args(args: List[str] = None) -> argparse.Namespace:
+def parse_args(args: list[str] = None) -> argparse.Namespace:
     if args is None:
         args = sys.argv[1:]
 

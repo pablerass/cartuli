@@ -58,21 +58,21 @@ def test_sheet_card_position():
 
 def test_sheet_page_cards():
     cards_set_1 = [
-        Card("f01"),
-        Card("f02"),
-        Card("f03"),
-        Card("f04"),
-        Card("f05"),
-        Card("f06"),
-        Card("f07")
+        Card(Card.STANDARD_SIZE, "f01"),
+        Card(Card.STANDARD_SIZE, "f02"),
+        Card(Card.STANDARD_SIZE, "f03"),
+        Card(Card.STANDARD_SIZE, "f04"),
+        Card(Card.STANDARD_SIZE, "f05"),
+        Card(Card.STANDARD_SIZE, "f06"),
+        Card(Card.STANDARD_SIZE, "f07")
     ]
     cards_set_2 = [
-        # Card("f08", "b08"),
-        Card("f08"),
-        Card("f09"),
+        # Card(Card.STANDARD_SIZE, "f08", "b08"),
+        Card(Card.STANDARD_SIZE, "f08"),
+        Card(Card.STANDARD_SIZE, "f09"),
         # Card("f10", "b10"),
-        Card("f10"),
-        Card("f11")
+        Card(Card.STANDARD_SIZE, "f10"),
+        Card(Card.STANDARD_SIZE, "f11")
     ]
     sheet = Sheet(card_size=Card.STANDARD_SIZE)
     num_cards_per_page = sheet.num_cards_per_page

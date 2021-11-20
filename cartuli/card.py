@@ -9,9 +9,10 @@ from . import Size, mm
 class Card:
     """One or two sided card representation."""
 
+    size: Size
     front_image: str
     back_image: str = None
-    size: Size = None
+    name: str = None
 
     MINI_USA_SIZE: ClassVar[Size] = Size(41*mm, 63*mm)        # Eldritch Horror
     MINI_CHIMERA_SIZE: ClassVar[Size] = Size(43*mm, 65*mm)    # Arkharm Horror

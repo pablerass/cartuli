@@ -2,8 +2,6 @@
 import logging
 
 from math import ceil
-from typing import List, Union
-
 from PIL import Image
 from reportlab.lib.utils import ImageReader
 from reportlab.pdfgen import canvas
@@ -56,7 +54,7 @@ class Sheet(object):
         return self.__card_size
 
     @property
-    def cards(self) -> List[Card]:
+    def cards(self) -> list[Card]:
         """Return current sheet cards."""
         return self.__cards
 
@@ -111,7 +109,7 @@ class Sheet(object):
     #     """Return if the card has two sides."""
     #     return any([card.back_image is not None for card in self.cards])
 
-    def add_cards(self, cards: Union[Card, List[Card]]) -> None:
+    def add_cards(self, cards: Card | list[Card]) -> None:
         """Add cards to sheet."""
         if isinstance(cards, Card):
             cards = (cards,)
@@ -124,7 +122,7 @@ class Sheet(object):
 
             self.__cards.append(card)
 
-    def page_cards(self, page: int) -> List[Card]:
+    def page_cards(self, page: int) -> list[Card]:
         """Return the cards that belong to a page."""
         return self.cards[(page - 1)*self.num_cards_per_page:page*self.num_cards_per_page]
 
