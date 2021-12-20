@@ -4,7 +4,8 @@ import argparse
 import logging
 import sys
 
-from cartuli import Sheet, Card
+from cartuli.card import Card, CardSize
+from cartuli.sheet import Sheet
 
 
 def parse_args(args: list[str] = None) -> argparse.Namespace:
@@ -37,8 +38,8 @@ def main(args=None):
         logging.getLogger('PIL').propagate = False
     logger = logging.getLogger('cartuli')
 
-    sheet = Sheet(card_size=Card.TAROT_SIZE)
-    sheet.add_cards([Card(image) for image in args.images])
+    sheet = Sheet(card_size=CardSize.CHIMERA_SIZE)
+    sheet.add_cards([Card(CardSize.CHIMERA_SIZE, image) for image in args.images])
     sheet.create_pdf(args.output_file)
     logger.info(f'Created {args.output_file} sheet with {len(args.images)} images')
 

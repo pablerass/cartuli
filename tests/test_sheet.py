@@ -1,7 +1,7 @@
 import pytest
 
 from cartuli.card import Card, CardSize
-from cartuli.measure import Coordinates, Position, Size, mm
+from cartuli.measure import Coordinates, Point, Size, Line, mm, A4
 from cartuli.sheet import Sheet
 
 
@@ -26,7 +26,7 @@ def test_sheet_cards_per_page():
 
 def test_sheet_card_page():
     card_sheet = Sheet(card_size=CardSize.STANDARD_SIZE,
-                       margin=5*mm, padding=4*mm)
+                       margin=5*mm, padding=4*mm, size=A4)
     assert card_sheet.card_page(4) == 1
     assert card_sheet.card_page(10) == 2
     assert card_sheet.card_page(30) == 4
@@ -34,26 +34,28 @@ def test_sheet_card_page():
 
 def test_sheet_card_coordinates():
     card_sheet = Sheet(card_size=CardSize.STANDARD_SIZE,
-                       margin=5*mm, padding=4*mm)
-    assert card_sheet.card_coordinates(1) == Coordinates(1, 1)
-    assert card_sheet.card_coordinates(2) == Coordinates(2, 1)
-    assert card_sheet.card_coordinates(3) == Coordinates(3, 1)
-    assert card_sheet.card_coordinates(4) == Coordinates(1, 2)
-    assert card_sheet.card_coordinates(5) == Coordinates(2, 2)
-    assert card_sheet.card_coordinates(6) == Coordinates(3, 2)
-    assert card_sheet.card_coordinates(7) == Coordinates(1, 3)
-    assert card_sheet.card_coordinates(8) == Coordinates(2, 3)
-    assert card_sheet.card_coordinates(9) == Coordinates(3, 3)
-    assert card_sheet.card_coordinates(10) == Coordinates(1, 1)
-    assert card_sheet.card_coordinates(18) == Coordinates(3, 3)
+                       margin=5*mm, padding=4*mm, size=A4)
+    assert card_sheet.card_coordinates(1) == Coordinates(0, 0)
+    assert card_sheet.card_coordinates(2) == Coordinates(1, 0)
+    assert card_sheet.card_coordinates(3) == Coordinates(2, 0)
+    assert card_sheet.card_coordinates(4) == Coordinates(0, 1)
+    assert card_sheet.card_coordinates(5) == Coordinates(1, 1)
+    assert card_sheet.card_coordinates(6) == Coordinates(2, 1)
+    assert card_sheet.card_coordinates(7) == Coordinates(0, 2)
+    assert card_sheet.card_coordinates(8) == Coordinates(1, 2)
+    assert card_sheet.card_coordinates(9) == Coordinates(2, 2)
+    assert card_sheet.card_coordinates(10) == Coordinates(0, 0)
+    assert card_sheet.card_coordinates(18) == Coordinates(2, 2)
 
 
 def test_sheet_card_position():
     card_sheet = Sheet(card_size=CardSize.STANDARD_SIZE,
-                       margin=5*mm, padding=4*mm)
-    assert card_sheet.card_position(Coordinates(1, 1)) == Position(5*mm, 5*mm)
-    assert card_sheet.card_position(Coordinates(3, 1)) == Position(140*mm, 5*mm)
-    assert card_sheet.card_position(Coordinates(2, 3)) == Position(72.5*mm, 189*mm)
+                       margin=5*mm, padding=4*mm, size=A4)
+    assert card_sheet.card_position(Coordinates(0, 0)) == Point(5*mm, A4.height - CardSize.STANDARD_SIZE.height - 5*mm)
+    assert card_sheet.card_position(Coordinates(2, 0)) == Point(140*mm,
+                                                                A4.height - CardSize.STANDARD_SIZE.height - 5*mm)
+    assert card_sheet.card_position(Coordinates(1, 2)) == Point(72.5*mm,
+                                                                A4.height - CardSize.STANDARD_SIZE.height - 189*mm)
     with pytest.raises(ValueError):
         assert card_sheet.card_position(Coordinates(4, 2))
 
@@ -104,3 +106,23 @@ def test_sheet_page_cards():
     sheet.add_cards(cards_set_1)
     assert sheet.pages == 3
     # assert sheet.two_sided
+
+
+def test_sheet_crop_marks():
+    card_sheet = Sheet(card_size=CardSize.STANDARD_SIZE,
+                       margin=5*mm, padding=4*mm, size=A4)
+
+    assert sorted(card_sheet.crop_marks)[6] == sorted([
+        Line(Point(5*mm, A4.height), Point(5*mm, 0*mm)),
+        Line(Point(68.5*mm, A4.height), Point(68.5*mm, 0*mm)),
+        Line(Point(72.5*mm, A4.height), Point(72.5*mm, 0*mm)),
+        Line(Point(136*mm, A4.height), Point(136*mm, 0*mm)),
+        Line(Point(140*mm, A4.height), Point(140*mm, 0*mm)),
+        Line(Point(203.5*mm, A4.height), Point(203.5*mm, 0*mm)),
+        Line(Point(0*mm, A4.height - 5*mm), Point(card_sheet.size.width, A4.height - 5*mm)),
+        Line(Point(0*mm, A4.height - 93*mm), Point(card_sheet.size.width, A4.height - 93*mm)),
+        Line(Point(0*mm, A4.height - 97*mm), Point(card_sheet.size.width, A4.height - 97*mm)),
+        Line(Point(0*mm, A4.height - 185*mm), Point(card_sheet.size.width, A4.height - 185*mm)),
+        Line(Point(0*mm, A4.height - 189*mm), Point(card_sheet.size.width, A4.height - 189*mm)),
+        Line(Point(0*mm, A4.height - 277*mm), Point(card_sheet.size.width, A4.height - 277*mm)),
+    ])[6]

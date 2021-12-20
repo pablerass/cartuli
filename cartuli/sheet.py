@@ -5,9 +5,10 @@ from math import ceil
 from PIL import Image
 from reportlab.lib.utils import ImageReader
 from reportlab.pdfgen import canvas
+from typing import List
 
 from .card import Card, CardSize
-from .measure import Coordinates, Position, Size, A4, mm
+from .measure import Coordinates, Point, Size, Line, A4, mm
 
 
 class Sheet(object):
@@ -28,11 +29,12 @@ class Sheet(object):
         self.__cards = []
         self.__cards_per_page = None
         self.__num_cards_per_page = None
+        self.__crop_marks = None
 
     @property
-    def name(self) -> str:
-        """Return sheet name."""
-        return self.__name
+    def card_size(self) -> Size:
+        """Return sheet card size."""
+        return self.__card_size
 
     @property
     def margin(self) -> float:
@@ -48,11 +50,6 @@ class Sheet(object):
     def size(self) -> Size:
         """Return sheet size."""
         return self.__size
-
-    @property
-    def card_size(self) -> Size:
-        """Return sheet card size."""
-        return self.__card_size
 
     @property
     def cards(self) -> list[Card]:
@@ -75,6 +72,28 @@ class Sheet(object):
             self.__num_cards_per_page = self.cards_per_page.width * self.cards_per_page.height
         return self.__num_cards_per_page
 
+    @property
+    def crop_marks(self) -> List[Line]:
+        """Return the crop marks to be drawn in each page."""
+        if self.__crop_marks is None:
+            crop_marks = []
+
+            for x in range(self.cards_per_page.width):
+                start_x_point = self.margin + x * (self.card_size.width + self.padding)
+                end_x_point = start_x_point + self.card_size.width
+                crop_marks.append(Line(Point(start_x_point, self.size.height), Point(start_x_point, 0*mm)))
+                crop_marks.append(Line(Point(end_x_point, self.size.height), Point(end_x_point, 0*mm)))
+
+            for y in range(self.cards_per_page.height):
+                start_y_point = self.size.height - self.margin - (y + 1) * self.card_size.height - y * self.padding
+                end_y_point = start_y_point + self.card_size.height
+                crop_marks.append(Line(Point(0*mm, start_y_point), Point(self.size.width, start_y_point)))
+                crop_marks.append(Line(Point(0*mm, end_y_point), Point(self.size.width, end_y_point)))
+
+            self.__crop_marks = crop_marks
+
+        return self.__crop_marks
+
     def card_page(self, card_number: int) -> int:
         """Return the card page based on its sequence number."""
         return card_number // (self.cards_per_page.width * self.cards_per_page.height) + 1
@@ -82,23 +101,17 @@ class Sheet(object):
     def card_coordinates(self, card_number: int) -> Coordinates:
         """Return the card coordinates based on its sequence number."""
         card_number_in_page = (card_number - 1) % (self.cards_per_page.width * self.cards_per_page.height) + 1
-        return Coordinates((card_number_in_page - 1) % self.cards_per_page.width + 1,
-                           (card_number_in_page - 1) // self.cards_per_page.width + 1)
+        return Coordinates((card_number_in_page - 1) % self.cards_per_page.width,
+                           (card_number_in_page - 1) // self.cards_per_page.width)
 
-    def card_position(self, coordinates: Coordinates) -> Position:
+    def card_position(self, coordinates: Coordinates) -> Point:
         """Return the card position based on a coordinates."""
         if (self.cards_per_page.width < coordinates.x or
                 self.cards_per_page.height < coordinates.y):
-            raise ValueError(f"Invalid position, maximun position is {Position(*self.cards_per_page)}")
-        x = self.margin + (coordinates.x - 1)*(self.card_size.width + self.padding)
-        y = self.margin + (coordinates.y - 1)*(self.card_size.height + self.padding)
-        return Position(x, y)
-
-    def __report_card_position(self, coordinates: Coordinates) -> Position:
-        card_position = self.card_position(coordinates)
-        x = card_position.x
-        y = self.size.height - card_position.y - self.card_size.height
-        return Position(x, y)
+            raise ValueError(f"Invalid position, maximun position is {Point(*self.cards_per_page)}")
+        x = self.margin + coordinates.x * self.card_size.width + coordinates.x * self.padding
+        y = self.size.height - self.margin - (coordinates.y + 1) * self.card_size.height - coordinates.y * self.padding
+        return Point(x, y)
 
     @property
     def pages(self) -> int:
@@ -133,14 +146,19 @@ class Sheet(object):
 
         for page in range(1, self.pages + 1):
             page_canvas = canvas.Canvas(f"{base_name}-{page}.pdf", pagesize=tuple(self.size))
+
+            for line in self.crop_marks:
+                page_canvas.line(*list(line))
+
             for i, card in enumerate(self.page_cards(page)):
                 num_card = i + 1
                 card_image = Image.open(card.front_image)
                 card_coordinates = self.card_coordinates(num_card)
-                card_position = self.__report_card_position(card_coordinates)
+                card_position = self.card_position(card_coordinates)
                 logger.debug(f"Adding {num_card} card {card.front_image} to page {page} at {card_coordinates} position")
                 page_canvas.drawImage(ImageReader(card_image),
                                       card_position.x, card_position.y,
                                       self.card_size.width, self.card_size.height)
+
             page_canvas.save()
             logger.debug(f"Created {page} PDF")

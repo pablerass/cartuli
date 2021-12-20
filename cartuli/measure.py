@@ -9,11 +9,11 @@ __all__ = [
     "A1", "A2", "A3", "A4", "A5",
     "LETTER", "HALF_LETTER", "LEGAL", "JUNIOR_LEGAL", "TABLOID",
     "mm", "cm", "inch",
-    "Size", "Position"
+    "Size", "Point"
 ]
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, order=True)
 class Size:
     """Size class in any measure."""
 
@@ -30,9 +30,9 @@ class Size:
         return (v for v in (self.width, self.height))
 
 
-@dataclass(frozen=True)
-class Position:
-    """Position class in any measure."""
+@dataclass(frozen=True, order=True)
+class Point:
+    """Point class in any measure."""
 
     x: float
     y: float
@@ -47,7 +47,21 @@ class Position:
         return (v for v in (self.x, self.y))
 
 
-class Coordinates(Position):
+@dataclass(frozen=True, order=True)
+class Line:
+    """Line class."""
+
+    a: Point
+    b: Point
+
+    def __str__(self):
+        return f"{self.a} <-> {self.b}"
+
+    def __iter__(self):
+        return (v for v in (self.a.x, self.a.y, self.b.x, self.b.y))
+
+
+class Coordinates(Point):
     pass
 
 
