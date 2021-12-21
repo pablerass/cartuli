@@ -144,9 +144,8 @@ class Sheet(object):
         """Create the sheet PDF with all added cards."""
         logger = logging.getLogger('cartuli.Sheet.create_pdf')
 
+        page_canvas = canvas.Canvas(f"{base_name}", pagesize=tuple(self.size))
         for page in range(1, self.pages + 1):
-            page_canvas = canvas.Canvas(f"{base_name}-{page}.pdf", pagesize=tuple(self.size))
-
             for line in self.crop_marks:
                 page_canvas.line(*list(line))
 
@@ -159,6 +158,7 @@ class Sheet(object):
                 page_canvas.drawImage(ImageReader(card_image),
                                       card_position.x, card_position.y,
                                       self.card_size.width, self.card_size.height)
+            page_canvas.showPage()
 
-            page_canvas.save()
-            logger.debug(f"Created {page} PDF")
+        page_canvas.save()
+        logger.debug(f"Created {page}")
