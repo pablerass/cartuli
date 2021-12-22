@@ -1,5 +1,7 @@
 import pytest
 
+from math import isclose
+
 from cartuli.card import Card, CardSize
 from cartuli.measure import Coordinates, Point, Size, Line, mm, A4
 from cartuli.sheet import Sheet
@@ -51,13 +53,21 @@ def test_sheet_card_coordinates():
 def test_sheet_card_position():
     card_sheet = Sheet(card_size=CardSize.STANDARD_SIZE,
                        margin=5*mm, padding=4*mm, size=A4)
-    assert card_sheet.card_position(Coordinates(0, 0)) == Point(5*mm, A4.height - CardSize.STANDARD_SIZE.height - 5*mm)
-    assert card_sheet.card_position(Coordinates(2, 0)) == Point(140*mm,
-                                                                A4.height - CardSize.STANDARD_SIZE.height - 5*mm)
-    assert card_sheet.card_position(Coordinates(1, 2)) == Point(72.5*mm,
-                                                                A4.height - CardSize.STANDARD_SIZE.height - 189*mm)
+    assert card_sheet.card_position(Coordinates(0, 0)) == Point(5.75*mm,
+                                                                A4.height - CardSize.STANDARD_SIZE.height - 12.5*mm)
+    assert card_sheet.card_position(Coordinates(2, 0)) == Point(140.75*mm,
+                                                                A4.height - CardSize.STANDARD_SIZE.height - 12.5*mm)
+    assert card_sheet.card_position(Coordinates(1, 2)) == Point(73.25*mm,
+                                                                A4.height - CardSize.STANDARD_SIZE.height - 196.5*mm)
     with pytest.raises(ValueError):
         assert card_sheet.card_position(Coordinates(4, 2))
+
+
+def test_sheet_margins():
+    card_sheet = Sheet(card_size=CardSize.STANDARD_SIZE,
+                       margin=5*mm, padding=4*mm, size=A4)
+    assert isclose(card_sheet.horizontal_margin, 5.75*mm)
+    assert isclose(card_sheet.vertical_margin, 12.5*mm)
 
 
 def test_sheet_page_cards():
@@ -112,17 +122,17 @@ def test_sheet_crop_marks():
     card_sheet = Sheet(card_size=CardSize.STANDARD_SIZE,
                        margin=5*mm, padding=4*mm, size=A4)
 
-    assert sorted(card_sheet.crop_marks)[6] == sorted([
-        Line(Point(5*mm, A4.height), Point(5*mm, 0*mm)),
-        Line(Point(68.5*mm, A4.height), Point(68.5*mm, 0*mm)),
-        Line(Point(72.5*mm, A4.height), Point(72.5*mm, 0*mm)),
-        Line(Point(136*mm, A4.height), Point(136*mm, 0*mm)),
-        Line(Point(140*mm, A4.height), Point(140*mm, 0*mm)),
-        Line(Point(203.5*mm, A4.height), Point(203.5*mm, 0*mm)),
-        Line(Point(0*mm, A4.height - 5*mm), Point(card_sheet.size.width, A4.height - 5*mm)),
-        Line(Point(0*mm, A4.height - 93*mm), Point(card_sheet.size.width, A4.height - 93*mm)),
-        Line(Point(0*mm, A4.height - 97*mm), Point(card_sheet.size.width, A4.height - 97*mm)),
-        Line(Point(0*mm, A4.height - 185*mm), Point(card_sheet.size.width, A4.height - 185*mm)),
-        Line(Point(0*mm, A4.height - 189*mm), Point(card_sheet.size.width, A4.height - 189*mm)),
-        Line(Point(0*mm, A4.height - 277*mm), Point(card_sheet.size.width, A4.height - 277*mm)),
-    ])[6]
+    assert sorted(card_sheet.crop_marks) == sorted([
+        Line(Point(5.75*mm, A4.height), Point(5.75*mm, 0*mm)),
+        Line(Point(69.25*mm, A4.height), Point(69.25*mm, 0*mm)),
+        Line(Point(73.25*mm, A4.height), Point(73.25*mm, 0*mm)),
+        Line(Point(136.75*mm, A4.height), Point(136.75*mm, 0*mm)),
+        Line(Point(140.75*mm, A4.height), Point(140.75*mm, 0*mm)),
+        Line(Point(204.25*mm, A4.height), Point(204.25*mm, 0*mm)),
+        Line(Point(0*mm, A4.height - 12.5*mm), Point(card_sheet.size.width, A4.height - 12.5*mm)),
+        Line(Point(0*mm, A4.height - 100.5*mm), Point(card_sheet.size.width, A4.height - 100.5*mm)),
+        Line(Point(0*mm, A4.height - 104.5*mm), Point(card_sheet.size.width, A4.height - 104.5*mm)),
+        Line(Point(0*mm, A4.height - 192.5*mm), Point(card_sheet.size.width, A4.height - 192.5*mm)),
+        Line(Point(0*mm, A4.height - 196.5*mm), Point(card_sheet.size.width, A4.height - 196.5*mm)),
+        Line(Point(0*mm, A4.height - 284.5*mm), Point(card_sheet.size.width, A4.height - 284.5*mm)),
+    ])

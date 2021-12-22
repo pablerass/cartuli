@@ -29,6 +29,8 @@ class Sheet(object):
         self.__cards = []
         self.__cards_per_page = None
         self.__num_cards_per_page = None
+        self.__horizontal_margin = None
+        self.__vertical_margin = None
         self.__crop_marks = None
 
     @property
@@ -40,6 +42,26 @@ class Sheet(object):
     def margin(self) -> float:
         """Return sheet margins."""
         return self.__margin
+
+    @property
+    def horizontal_margin(self) -> float:
+        """Return horizontal sheet margin to center content."""
+        if self.__horizontal_margin is None:
+            horizontal_cards = self.cards_per_page.width
+            self.__horizontal_margin = (self.size.width - horizontal_cards * self.card_size.width -
+                                        (horizontal_cards - 1) * self.padding) / 2
+
+        return self.__horizontal_margin
+
+    @property
+    def vertical_margin(self) -> float:
+        """Return vertical sheet margin to center content."""
+        if self.__vertical_margin is None:
+            vertical_cards = self.cards_per_page.height
+            self.__vertical_margin = (self.size.height - vertical_cards * self.card_size.height -
+                                      (vertical_cards - 1) * self.padding) / 2
+
+        return self.__vertical_margin
 
     @property
     def padding(self) -> float:
@@ -72,28 +94,6 @@ class Sheet(object):
             self.__num_cards_per_page = self.cards_per_page.width * self.cards_per_page.height
         return self.__num_cards_per_page
 
-    @property
-    def crop_marks(self) -> List[Line]:
-        """Return the crop marks to be drawn in each page."""
-        if self.__crop_marks is None:
-            crop_marks = []
-
-            for x in range(self.cards_per_page.width):
-                start_x_point = self.margin + x * (self.card_size.width + self.padding)
-                end_x_point = start_x_point + self.card_size.width
-                crop_marks.append(Line(Point(start_x_point, self.size.height), Point(start_x_point, 0*mm)))
-                crop_marks.append(Line(Point(end_x_point, self.size.height), Point(end_x_point, 0*mm)))
-
-            for y in range(self.cards_per_page.height):
-                start_y_point = self.size.height - self.margin - (y + 1) * self.card_size.height - y * self.padding
-                end_y_point = start_y_point + self.card_size.height
-                crop_marks.append(Line(Point(0*mm, start_y_point), Point(self.size.width, start_y_point)))
-                crop_marks.append(Line(Point(0*mm, end_y_point), Point(self.size.width, end_y_point)))
-
-            self.__crop_marks = crop_marks
-
-        return self.__crop_marks
-
     def card_page(self, card_number: int) -> int:
         """Return the card page based on its sequence number."""
         return card_number // (self.cards_per_page.width * self.cards_per_page.height) + 1
@@ -109,9 +109,33 @@ class Sheet(object):
         if (self.cards_per_page.width < coordinates.x or
                 self.cards_per_page.height < coordinates.y):
             raise ValueError(f"Invalid position, maximun position is {Point(*self.cards_per_page)}")
-        x = self.margin + coordinates.x * self.card_size.width + coordinates.x * self.padding
-        y = self.size.height - self.margin - (coordinates.y + 1) * self.card_size.height - coordinates.y * self.padding
+        x = self.horizontal_margin + coordinates.x * self.card_size.width + coordinates.x * self.padding
+        y = (self.size.height - self.vertical_margin - (coordinates.y + 1) * self.card_size.height -
+             coordinates.y * self.padding)
         return Point(x, y)
+
+    @property
+    def crop_marks(self) -> List[Line]:
+        """Return the crop marks to be drawn in each page."""
+        if self.__crop_marks is None:
+            crop_marks = []
+
+            for x in range(self.cards_per_page.width):
+                start_x_point = self.horizontal_margin + x * (self.card_size.width + self.padding)
+                end_x_point = start_x_point + self.card_size.width
+                crop_marks.append(Line(Point(start_x_point, self.size.height), Point(start_x_point, 0*mm)))
+                crop_marks.append(Line(Point(end_x_point, self.size.height), Point(end_x_point, 0*mm)))
+
+            for y in range(self.cards_per_page.height):
+                start_y_point = (self.size.height - self.vertical_margin -
+                                 (y + 1) * self.card_size.height - y * self.padding)
+                end_y_point = start_y_point + self.card_size.height
+                crop_marks.append(Line(Point(0*mm, start_y_point), Point(self.size.width, start_y_point)))
+                crop_marks.append(Line(Point(0*mm, end_y_point), Point(self.size.width, end_y_point)))
+
+            self.__crop_marks = crop_marks
+
+        return self.__crop_marks
 
     @property
     def pages(self) -> int:
