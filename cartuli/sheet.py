@@ -14,16 +14,19 @@ from .measure import Coordinates, Point, Size, Line, A4, mm
 class Sheet(object):
     """Sheet that contains multiple cards to be printed."""
 
-    DEFAULT_MARGIN = 5*mm
-    DEFAULT_PADDING = 4*mm
+    DEFAULT_MARGIN = 2*mm
+    DEFAULT_PADDING = 6*mm
+    DEFAULT_CROP_MARKS_PADDING = 1*mm
     DEFAULT_SIZE = A4
 
     def __init__(self, /, card_size: Size = CardSize.STANDARD_SIZE, margin: float = DEFAULT_MARGIN,
-                 padding: float = DEFAULT_PADDING, size: Size = DEFAULT_SIZE):
+                 padding: float = DEFAULT_PADDING, crop_marks_padding=DEFAULT_CROP_MARKS_PADDING,
+                 size: Size = DEFAULT_SIZE):
         """Create Sheet object."""
         self.__card_size = card_size
         self.__margin = margin
         self.__padding = padding
+        self.__crop_marks_padding = crop_marks_padding
         self.__size = size
 
         self.__cards = []
@@ -67,6 +70,11 @@ class Sheet(object):
     def padding(self) -> float:
         """Return distance between cards."""
         return self.__padding
+
+    @property
+    def crop_marks_padding(self) -> float:
+        """Return distance between crop marks and cards."""
+        return self.__crop_marks_padding
 
     @property
     def size(self) -> Size:
@@ -123,15 +131,60 @@ class Sheet(object):
             for x in range(self.cards_per_page.width):
                 start_x_point = self.horizontal_margin + x * (self.card_size.width + self.padding)
                 end_x_point = start_x_point + self.card_size.width
-                crop_marks.append(Line(Point(start_x_point, self.size.height), Point(start_x_point, 0*mm)))
-                crop_marks.append(Line(Point(end_x_point, self.size.height), Point(end_x_point, 0*mm)))
+
+                crop_marks.append(Line(
+                    Point(start_x_point, 0),
+                    Point(start_x_point, self.vertical_margin - self.crop_marks_padding)))
+                crop_marks.append(Line(
+                    Point(end_x_point, 0),
+                    Point(end_x_point, self.vertical_margin - self.crop_marks_padding)))
+                if 2 * self.crop_marks_padding < self.padding:
+                    for y in range(self.cards_per_page.height - 1):
+                        crop_marks.append(Line(
+                            Point(start_x_point, self.vertical_margin + (y + 1) * self.card_size.height
+                                  + y * self.padding + self.crop_marks_padding),
+                            Point(start_x_point, self.vertical_margin +
+                                  (y + 1) * (self.card_size.height + self.padding) - self.crop_marks_padding)))
+                        crop_marks.append(Line(
+                            Point(end_x_point, self.vertical_margin + (y + 1) * self.card_size.height
+                                  + y * self.padding + self.crop_marks_padding),
+                            Point(end_x_point, self.vertical_margin + (y + 1) * (self.card_size.height + self.padding)
+                                  - self.crop_marks_padding)))
+                crop_marks.append(Line(
+                    Point(start_x_point, self.size.height - self.vertical_margin + self.crop_marks_padding),
+                    Point(start_x_point, self.size.height)))
+                crop_marks.append(Line(
+                    Point(end_x_point, self.size.height - self.vertical_margin + self.crop_marks_padding),
+                    Point(end_x_point, self.size.height)))
 
             for y in range(self.cards_per_page.height):
-                start_y_point = (self.size.height - self.vertical_margin -
-                                 (y + 1) * self.card_size.height - y * self.padding)
+                start_y_point = self.vertical_margin + y * (self.card_size.height + self.padding)
                 end_y_point = start_y_point + self.card_size.height
-                crop_marks.append(Line(Point(0*mm, start_y_point), Point(self.size.width, start_y_point)))
-                crop_marks.append(Line(Point(0*mm, end_y_point), Point(self.size.width, end_y_point)))
+
+                crop_marks.append(Line(
+                    Point(0, start_y_point),
+                    Point(self.horizontal_margin - self.crop_marks_padding, start_y_point)))
+                crop_marks.append(Line(
+                    Point(0, end_y_point),
+                    Point(self.horizontal_margin - self.crop_marks_padding, end_y_point)))
+                if 2 * self.crop_marks_padding < self.padding:
+                    for x in range(self.cards_per_page.width - 1):
+                        crop_marks.append(Line(
+                            Point(self.horizontal_margin + (x + 1) * self.card_size.width + x * self.padding
+                                  + self.crop_marks_padding, start_y_point),
+                            Point(self.horizontal_margin + (x + 1) * (self.card_size.width + self.padding)
+                                  - self.crop_marks_padding, start_y_point)))
+                        crop_marks.append(Line(
+                            Point(self.horizontal_margin + (x + 1) * self.card_size.width + x * self.padding
+                                  + self.crop_marks_padding, end_y_point),
+                            Point(self.horizontal_margin + (x + 1) * (self.card_size.width + self.padding)
+                                  - self.crop_marks_padding, end_y_point)))
+                crop_marks.append(Line(
+                    Point(self.size.width - self.horizontal_margin + self.crop_marks_padding, start_y_point),
+                    Point(self.size.width, start_y_point)))
+                crop_marks.append(Line(
+                    Point(self.size.width - self.horizontal_margin + self.crop_marks_padding, end_y_point),
+                    Point(self.size.width, end_y_point)))
 
             self.__crop_marks = crop_marks
 
@@ -168,10 +221,11 @@ class Sheet(object):
         """Create the sheet PDF with all added cards."""
         logger = logging.getLogger('cartuli.Sheet.create_pdf')
 
-        page_canvas = canvas.Canvas(f"{base_name}", pagesize=tuple(self.size))
+        c = canvas.Canvas(f"{base_name}", pagesize=tuple(self.size))
         for page in range(1, self.pages + 1):
             for line in self.crop_marks:
-                page_canvas.line(*list(line))
+                c.setLineWidth(0.5)
+                c.line(*list(line))
 
             for i, card in enumerate(self.page_cards(page)):
                 num_card = i + 1
@@ -179,10 +233,10 @@ class Sheet(object):
                 card_coordinates = self.card_coordinates(num_card)
                 card_position = self.card_position(card_coordinates)
                 logger.debug(f"Adding {num_card} card {card.front_image} to page {page} at {card_coordinates} position")
-                page_canvas.drawImage(ImageReader(card_image),
-                                      card_position.x, card_position.y,
-                                      self.card_size.width, self.card_size.height)
-            page_canvas.showPage()
+                c.drawImage(ImageReader(card_image),
+                            card_position.x, card_position.y,
+                            self.card_size.width, self.card_size.height)
+            c.showPage()
 
-        page_canvas.save()
+        c.save()
         logger.debug(f"Created {page}")
