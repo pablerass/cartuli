@@ -2,32 +2,32 @@ import pytest
 
 from math import isclose
 
-from cartuli.card import Card, CardSize
-from cartuli.measure import Coordinates, Point, Size, Line, mm, A4
+from cartuli.card import Card
+from cartuli.measure import Coordinates, Point, Size, Line, mm, A4, STANDARD, MINI_CHIMERA, MINI_USA, TAROT
 from cartuli.sheet import Sheet
 
 
 def test_sheet_cards_per_page():
-    sheet_standard = Sheet(card_size=CardSize.STANDARD_SIZE)
+    sheet_standard = Sheet(card_size=STANDARD)
     assert sheet_standard.cards_per_page == Size(3, 3)
     assert sheet_standard.num_cards_per_page == 9
 
-    sheet_chimera = Sheet(card_size=CardSize.MINI_CHIMERA_SIZE)
+    sheet_chimera = Sheet(card_size=MINI_CHIMERA)
     assert sheet_chimera.cards_per_page == Size(4, 4)
     assert sheet_chimera.num_cards_per_page == 16
 
-    sheet_mini_usa = Sheet(card_size=CardSize.MINI_USA_SIZE,
+    sheet_mini_usa = Sheet(card_size=MINI_USA,
                            margin=2*mm, padding=0*mm)
     assert sheet_mini_usa.cards_per_page == Size(5, 4)
     assert sheet_mini_usa.num_cards_per_page == 20
 
-    sheet_tarot = Sheet(card_size=CardSize.TAROT_SIZE)
+    sheet_tarot = Sheet(card_size=TAROT)
     assert sheet_tarot.cards_per_page == Size(2, 2)
     assert sheet_tarot.num_cards_per_page == 4
 
 
 def test_sheet_card_page():
-    card_sheet = Sheet(card_size=CardSize.STANDARD_SIZE,
+    card_sheet = Sheet(card_size=STANDARD,
                        margin=5*mm, padding=4*mm, size=A4)
     assert card_sheet.card_page(4) == 1
     assert card_sheet.card_page(10) == 2
@@ -35,7 +35,7 @@ def test_sheet_card_page():
 
 
 def test_sheet_card_coordinates():
-    card_sheet = Sheet(card_size=CardSize.STANDARD_SIZE,
+    card_sheet = Sheet(card_size=STANDARD,
                        margin=5*mm, padding=4*mm, size=A4)
     assert card_sheet.card_coordinates(1) == Coordinates(0, 0)
     assert card_sheet.card_coordinates(2) == Coordinates(1, 0)
@@ -51,20 +51,20 @@ def test_sheet_card_coordinates():
 
 
 def test_sheet_card_position():
-    card_sheet = Sheet(card_size=CardSize.STANDARD_SIZE,
+    card_sheet = Sheet(card_size=STANDARD,
                        margin=5*mm, padding=4*mm, size=A4)
     assert card_sheet.card_position(Coordinates(0, 0)) == Point(5.75*mm,
-                                                                A4.height - CardSize.STANDARD_SIZE.height - 12.5*mm)
+                                                                A4.height - STANDARD.height - 12.5*mm)
     assert card_sheet.card_position(Coordinates(2, 0)) == Point(140.75*mm,
-                                                                A4.height - CardSize.STANDARD_SIZE.height - 12.5*mm)
+                                                                A4.height - STANDARD.height - 12.5*mm)
     assert card_sheet.card_position(Coordinates(1, 2)) == Point(73.25*mm,
-                                                                A4.height - CardSize.STANDARD_SIZE.height - 196.5*mm)
+                                                                A4.height - STANDARD.height - 196.5*mm)
     with pytest.raises(ValueError):
         assert card_sheet.card_position(Coordinates(4, 2))
 
 
 def test_sheet_margins():
-    card_sheet = Sheet(card_size=CardSize.STANDARD_SIZE,
+    card_sheet = Sheet(card_size=STANDARD,
                        margin=5*mm, padding=4*mm, size=A4)
     assert isclose(card_sheet.horizontal_margin, 5.75*mm)
     assert isclose(card_sheet.vertical_margin, 12.5*mm)
@@ -72,23 +72,23 @@ def test_sheet_margins():
 
 def test_sheet_page_cards():
     cards_set_1 = [
-        Card(CardSize.STANDARD_SIZE, "f01"),
-        Card(CardSize.STANDARD_SIZE, "f02"),
-        Card(CardSize.STANDARD_SIZE, "f03"),
-        Card(CardSize.STANDARD_SIZE, "f04"),
-        Card(CardSize.STANDARD_SIZE, "f05"),
-        Card(CardSize.STANDARD_SIZE, "f06"),
-        Card(CardSize.STANDARD_SIZE, "f07")
+        Card(STANDARD, "f01"),
+        Card(STANDARD, "f02"),
+        Card(STANDARD, "f03"),
+        Card(STANDARD, "f04"),
+        Card(STANDARD, "f05"),
+        Card(STANDARD, "f06"),
+        Card(STANDARD, "f07")
     ]
     cards_set_2 = [
-        # Card(CardSize.STANDARD_SIZE, "f08", "b08"),
-        Card(CardSize.STANDARD_SIZE, "f08"),
-        Card(CardSize.STANDARD_SIZE, "f09"),
-        # Card(CardSize.STANDARD_SIZE"f10", "b10"),
-        Card(CardSize.STANDARD_SIZE, "f10"),
-        Card(CardSize.STANDARD_SIZE, "f11")
+        # Card(STANDARD, "f08", "b08"),
+        Card(STANDARD, "f08"),
+        Card(STANDARD, "f09"),
+        # Card(STANDARD"f10", "b10"),
+        Card(STANDARD, "f10"),
+        Card(STANDARD, "f11")
     ]
-    sheet = Sheet(card_size=CardSize.STANDARD_SIZE)
+    sheet = Sheet(card_size=STANDARD)
     num_cards_per_page = sheet.num_cards_per_page
 
     assert sheet.pages == 0
@@ -119,7 +119,7 @@ def test_sheet_page_cards():
 
 
 def test_sheet_crop_marks():
-    card_sheet = Sheet(card_size=CardSize.STANDARD_SIZE, margin=5*mm, padding=4*mm,
+    card_sheet = Sheet(card_size=STANDARD, margin=5*mm, padding=4*mm,
                        crop_marks_padding=1*mm, size=A4)
 
     # Horizontal margin = 5.75

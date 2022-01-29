@@ -4,7 +4,8 @@ import argparse
 import logging
 import sys
 
-from cartuli.card import Card, CardSize
+from cartuli.card import Card
+from cartuli.measure import Size, A4, STANDARD
 from cartuli.sheet import Sheet
 
 
@@ -16,8 +17,12 @@ def parse_args(args: list[str] = None) -> argparse.Namespace:
 
     parser.add_argument('-o', '--output-file', type=str, required=False, default='output',
                         help='Sheet name')
-    parser.add_argument('-i', '--images', type=str, nargs='+', required=True,
+    parser.add_argument('-i', '--card-images', type=str, nargs='+', required=True,
                         help='Images to add to sheet')
+    parser.add_argument('-p', '--page-size', type=Size.from_str, default=A4,
+                        help="Page size")
+    parser.add_argument('-c', '--card-size', type=Size.from_str, default=STANDARD,
+                        help="Card size")
     parser.add_argument('-v', '--verbose', action='count', default=0,
                         help="Display verbose output")
     return parser.parse_args(args)
@@ -38,10 +43,10 @@ def main(args=None):
         logging.getLogger('PIL').propagate = False
     logger = logging.getLogger('cartuli')
 
-    sheet = Sheet(card_size=CardSize.CHIMERA_SIZE)
-    sheet.add_cards([Card(CardSize.CHIMERA_SIZE, image) for image in args.images])
+    sheet = Sheet(size=args.page_size, card_size=args.card_size)
+    sheet.add_cards([Card(args.card_size, image) for image in args.card_images])
     sheet.create_pdf(args.output_file)
-    logger.info(f'Created {args.output_file} sheet with {len(args.images)} images')
+    logger.info(f'Created {args.output_file} sheet with {len(args.card_images)} card_images')
 
     return 0
 

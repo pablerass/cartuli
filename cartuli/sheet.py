@@ -7,8 +7,8 @@ from reportlab.lib.utils import ImageReader
 from reportlab.pdfgen import canvas
 from typing import List
 
-from .card import Card, CardSize
-from .measure import Coordinates, Point, Size, Line, A4, mm
+from .card import Card
+from .measure import Coordinates, Point, Size, Line, A4, mm, STANDARD
 
 
 class Sheet(object):
@@ -19,7 +19,7 @@ class Sheet(object):
     DEFAULT_CROP_MARKS_PADDING = 1*mm
     DEFAULT_SIZE = A4
 
-    def __init__(self, /, card_size: Size = CardSize.STANDARD_SIZE, margin: float = DEFAULT_MARGIN,
+    def __init__(self, /, card_size: Size = STANDARD, margin: float = DEFAULT_MARGIN,
                  padding: float = DEFAULT_PADDING, crop_marks_padding=DEFAULT_CROP_MARKS_PADDING,
                  size: Size = DEFAULT_SIZE):
         """Create Sheet object."""
