@@ -17,5 +17,5 @@ test:
 	pytest
 
 test-coverage:
-	coverage run -m pytest
+	coverage run --source cartuli -m pytest
 	coverage report -m

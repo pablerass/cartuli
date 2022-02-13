@@ -1,5 +1,7 @@
-from cartuli.card import Card
-from cartuli.measure import STANDARD
+import pytest
+
+from cartuli.card import Card, CardImage
+from cartuli.measure import STANDARD, CHIMERA
 
 
 def test_card():
@@ -8,3 +10,8 @@ def test_card():
 
     assert not card1.two_sided
     assert card2.two_sided
+
+
+def test_invalid_card():
+    with pytest.raises(ValueError):
+        Card(STANDARD, CardImage("c1.jpg", CHIMERA))

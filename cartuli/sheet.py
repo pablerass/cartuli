@@ -5,7 +5,6 @@ from math import ceil
 from PIL import Image
 from reportlab.lib.utils import ImageReader
 from reportlab.pdfgen import canvas
-from typing import List
 
 from .card import Card
 from .measure import Coordinates, Point, Size, Line, A4, mm, STANDARD
@@ -123,7 +122,7 @@ class Sheet(object):
         return Point(x, y)
 
     @property
-    def crop_marks(self) -> List[Line]:
+    def crop_marks(self) -> list[Line]:
         """Return the crop marks to be drawn in each page."""
         if self.__crop_marks is None:
             crop_marks = []
@@ -223,6 +222,7 @@ class Sheet(object):
 
         c = canvas.Canvas(f"{base_name}", pagesize=tuple(self.size))
         for page in range(1, self.pages + 1):
+            # TODO: Only draw crop marks in the back page if it is two sided
             for line in self.crop_marks:
                 c.setLineWidth(0.5)
                 c.line(*list(line))
