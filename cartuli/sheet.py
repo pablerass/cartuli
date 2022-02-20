@@ -2,7 +2,6 @@
 import logging
 
 from math import ceil
-from PIL import Image
 from reportlab.lib.utils import ImageReader
 from reportlab.pdfgen import canvas
 
@@ -220,22 +219,24 @@ class Sheet(object):
         """Create the sheet PDF with all added cards."""
         logger = logging.getLogger('cartuli.Sheet.create_pdf')
 
+        # TODO: Add title to PDF document
         c = canvas.Canvas(f"{base_name}", pagesize=tuple(self.size))
         for page in range(1, self.pages + 1):
+            for i, card in enumerate(self.page_cards(page)):
+                num_card = i + 1
+                card_image = card.front_image.image
+                card_coordinates = self.card_coordinates(num_card)
+                card_position = self.card_position(card_coordinates)
+                logger.debug(f"Adding {num_card} card {card.front_image} to page {page} at {card_coordinates} position")
+                c.drawImage(ImageReader(card_image),
+                            card_position.x - card.front_image.bleed, card_position.y - card.front_image.bleed,
+                            card.front_image.image_size.width, card.front_image.image_size.height)
+
             # TODO: Only draw crop marks in the back page if it is two sided
             for line in self.crop_marks:
                 c.setLineWidth(0.5)
                 c.line(*list(line))
 
-            for i, card in enumerate(self.page_cards(page)):
-                num_card = i + 1
-                card_image = Image.open(card.front_image)
-                card_coordinates = self.card_coordinates(num_card)
-                card_position = self.card_position(card_coordinates)
-                logger.debug(f"Adding {num_card} card {card.front_image} to page {page} at {card_coordinates} position")
-                c.drawImage(ImageReader(card_image),
-                            card_position.x, card_position.y,
-                            self.card_size.width, self.card_size.height)
             c.showPage()
 
         c.save()

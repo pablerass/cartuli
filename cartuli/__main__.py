@@ -4,9 +4,10 @@ import argparse
 import logging
 import sys
 
-from cartuli.card import Card
-from cartuli.measure import Size, A4, STANDARD
-from cartuli.sheet import Sheet
+from .card import Card, CardImage
+from .measure import Size, A4, STANDARD, mm
+from .sheet import Sheet
+from .filters import CardImageMultipleFilter, CardImageInpaintFilter, CardImageNullFilter
 
 
 def parse_args(args: list[str] = None) -> argparse.Namespace:
@@ -43,8 +44,14 @@ def main(args=None):
         logging.getLogger('PIL').propagate = False
     logger = logging.getLogger('cartuli')
 
-    sheet = Sheet(size=args.page_size, card_size=args.card_size)
-    sheet.add_cards([Card(args.card_size, image) for image in args.card_images])
+    sheet = Sheet(size=args.page_size, card_size=args.card_size, padding=10*mm)
+    filters = CardImageMultipleFilter(
+        CardImageInpaintFilter()
+        # CardImageNullFilter()
+    )
+    sheet.add_cards(
+        [Card(args.card_size, filters.apply(CardImage(image, args.card_size)))
+         for image in args.card_images])
     sheet.create_pdf(args.output_file)
     logger.info(f'Created {args.output_file} sheet with {len(args.card_images)} card_images')
 
