@@ -30,15 +30,16 @@ class CardImageMultipleFilter(CardImageFilter):
 
 @dataclass(frozen=True)
 class CardImageInpaintFilter(CardImageFilter):
-    # TODO: Convert size to coeficients or percentajes based on image size
-    inpaint_size: float = 3*mm
-    image_crop: float = 1*mm
-    corner_radius: float = 20.0
+    inpaint_size: float = 4*mm
+    image_crop: float = 0.4*mm
+    corner_radius: float = 3*mm
 
     def apply(self, card_image: CardImage) -> CardImage:
         return CardImage(
-            # TODO; Convert inpaint_size, image_crop and corner_radius to mm
-            inpaint(card_image.image, int(self.inpaint_size)*3, int(self.image_crop), int(self.corner_radius)),
+            inpaint(card_image.image,
+                    int(self.inpaint_size*card_image.resolution.width),
+                    int(self.image_crop*card_image.resolution.width),
+                    int((self.corner_radius+self.image_crop)*card_image.resolution.width)),
             card_image.size,
             card_image.bleed + self.inpaint_size
         )

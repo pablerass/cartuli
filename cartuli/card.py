@@ -12,6 +12,7 @@ class CardImage:
     def __init__(self, image: Path | str | Image.Image, size: Size, bleed: float = 0.0):
         self.__image_path = None
         self.__image = None
+        self.__resolution = None
 
         if isinstance(image, str):
             image = Path(image)
@@ -20,7 +21,7 @@ class CardImage:
         elif isinstance(image, Image.Image):
             self.__image = image
         else:
-            raise TypeError(f"{type(image)} is not a valid impage")
+            raise TypeError(f"{type(image)} is not a valid image")
 
         self.__size = size
         self.__bleed = bleed
@@ -43,6 +44,15 @@ class CardImage:
     @property
     def bleed(self) -> float:
         return self.__bleed
+
+    @property
+    def resolution(self) -> Size:
+        if self.__resolution is None:
+            self.__resolution = Size(
+                self.image.width / self.size.width,
+                self.image.height / self.size.height)
+
+        return self.__resolution
 
     @property
     def image_size(self) -> Size:
