@@ -23,8 +23,8 @@ __all__ = [
 class Size:
     """Size class in any measure."""
 
-    width: float
-    height: float
+    width: float | int
+    height: float | int
 
     def __eq__(self, other):
         return isclose(self.width, other.width) and isclose(self.height, other.height)
@@ -48,13 +48,16 @@ class Size:
 
         raise ValueError(f'invalid literal for Size value: \'{s}\'')
 
+    def __mul__(self, other: float | int):
+        return self.__class__(self.width * other, self.height * other)
+
 
 @dataclass(frozen=True, order=True)
 class Point:
     """Point class in any measure."""
 
-    x: float
-    y: float
+    x: float | int
+    y: float | int
 
     def __eq__(self, other):
         return isclose(self.x, other.x) and isclose(self.y, other.y)

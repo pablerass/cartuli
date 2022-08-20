@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass
 
 from .card import CardImage
-from .measure import mm
+from .measure import Size, mm
 from .processing import inpaint
 
 
@@ -37,9 +37,9 @@ class CardImageInpaintFilter(CardImageFilter):
     def apply(self, card_image: CardImage) -> CardImage:
         return CardImage(
             inpaint(card_image.image,
-                    int(self.inpaint_size*card_image.resolution.width),
-                    int(self.image_crop*card_image.resolution.width),
-                    int((self.corner_radius+self.image_crop)*card_image.resolution.width)),
+                    card_image.resolution * self.inpaint_size,
+                    card_image.resolution * self.image_crop,
+                    card_image.resolution * (self.corner_radius + self.image_crop)),
             card_image.size,
             card_image.bleed + self.inpaint_size
         )
