@@ -2,11 +2,11 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from functools import partial
 from math import isclose
 from reportlab.lib import pagesizes
 from reportlab.lib.units import mm, cm, inch
 from typing import Final
-
 
 __all__ = [
     "A1", "A2", "A3", "A4", "A5",
@@ -17,6 +17,9 @@ __all__ = [
     "mm", "cm", "inch",
     "Size", "Point"
 ]
+
+
+isclose = partial(isclose, rel_tol=1e-04)
 
 
 @dataclass(frozen=True, order=True)
@@ -48,8 +51,11 @@ class Size:
 
         raise ValueError(f'invalid literal for Size value: \'{s}\'')
 
-    def __mul__(self, other: float | int):
+    def __mul__(self, other: float | int) -> Size:
         return self.__class__(self.width * other, self.height * other)
+
+    def __truediv__(self, other: float | int) -> Size:
+        return self.__class__(self.width / other, self.height / other)
 
 
 @dataclass(frozen=True, order=True)

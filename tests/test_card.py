@@ -1,7 +1,7 @@
 import pytest
 
 from cartuli.card import Card, CardImage
-from cartuli.measure import STANDARD, CHIMERA
+from cartuli.measure import STANDARD, CHIMERA, Size
 
 
 def test_card():
@@ -10,6 +10,11 @@ def test_card():
 
     assert not card1.two_sided
     assert card2.two_sided
+
+
+def test_card_resolution(fixture_file):
+    assert Card(STANDARD, fixture_file("card.png")).front_image.resolution == Size(6.666, 6.815)
+    assert Card(STANDARD*2, fixture_file("card.png")).front_image.resolution == Size(6.666, 6.815)/2
 
 
 def test_invalid_card():
