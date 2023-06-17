@@ -1,0 +1,12 @@
+size: "(33*cm,48*cm)"
+margin: "1*cm"
+card_bleed: "3*mm"
+sheets:
+  - cards:
+      card_size: "(44*mm,75*mm)"
+      front_images:
+        files: "cards/*.png"
+      back_image:
+        file: "card-back.png"
+  - tokens:
+      size: "(30*cm,34*cm)"
