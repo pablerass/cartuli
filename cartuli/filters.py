@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass
 
 from .card import CardImage
-from .measure import Size, mm
+from .measure import mm
 from .processing import inpaint
 
 

@@ -71,21 +71,19 @@ def test_sheet_margins():
 
 def test_sheet_page_cards():
     cards_set_1 = [
-        Card(STANDARD, "f01"),
-        Card(STANDARD, "f02"),
-        Card(STANDARD, "f03"),
-        Card(STANDARD, "f04"),
-        Card(STANDARD, "f05"),
-        Card(STANDARD, "f06"),
-        Card(STANDARD, "f07")
+        Card("f01", size=STANDARD),
+        Card("f02", size=STANDARD),
+        Card("f03", size=STANDARD),
+        Card("f04", size=STANDARD),
+        Card("f05", size=STANDARD),
+        Card("f06", size=STANDARD),
+        Card("f07", size=STANDARD)
     ]
     cards_set_2 = [
-        # Card(STANDARD, "f08", "b08"),
-        Card(STANDARD, "f08"),
-        Card(STANDARD, "f09"),
-        # Card(STANDARD"f10", "b10"),
-        Card(STANDARD, "f10"),
-        Card(STANDARD, "f11")
+        Card("f08", size=STANDARD),
+        Card("f09", size=STANDARD),
+        Card("f10", size=STANDARD),
+        Card("f11", size=STANDARD)
     ]
     sheet = Sheet(card_size=STANDARD, size=A4, margin=2*mm, padding=4*mm, print_margin=0)
     num_cards_per_page = sheet.num_cards_per_page

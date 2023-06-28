@@ -205,7 +205,7 @@ class Sheet(object):
     # @property
     # def two_sided(self) -> bool:
     #     """Return if the card has two sides."""
-    #     return any([card.back_image is not None for card in self.cards])
+    #     return any([card.back is not None for card in self.cards])
 
     def add_cards(self, cards: Card | list[Card]) -> None:
         """Add cards to sheet."""
@@ -215,7 +215,7 @@ class Sheet(object):
         for i, card in enumerate(cards):
             if card.size is not None and card.size != self.__card_size:
                 raise ValueError(f"{card.size} does not fit in sheet")
-            if card.back_image is not None:
+            if card.back is not None:
                 raise ValueError("Only one side cards are supported")
 
             self.__cards.append(card)

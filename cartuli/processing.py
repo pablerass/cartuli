@@ -40,7 +40,7 @@ def inpaint(image: Image.Image, inpaint_size: Size | float | int, image_crop: Si
          mask_image.size[0] - inpaint_size.width - image_crop.width,
          mask_image.size[1] - inpaint_size.height - image_crop.height),
         fill='black', width=0, radius=max(corner_radius))
-        # TUNE: Find a way to round with different vertical and horizontal values
+    # TUNE: Find a way to round with different vertical and horizontal values
 
     inpaint_image_cv = cv.inpaint(
         cv.cvtColor(np.array(expanded_image), cv.COLOR_RGB2BGR), np.array(mask_image), 15, cv.INPAINT_NS)

@@ -10,7 +10,7 @@ class CardImage:
     """Card image."""
 
     # TUNE: Size is duplicated between image and card
-    def __init__(self, image: Path | str | Image.Image, size: Size, bleed: float = 0.0):
+    def __init__(self, image: Path | str | Image.Image, /, size: Size, bleed: float = 0.0):
         self.__image_path = None
         self.__image = None
         self.__resolution = None
@@ -63,42 +63,47 @@ class CardImage:
 class Card:
     """One or two sided card representation."""
 
-    def __init__(self, size: Size, front_image: Path | str | CardImage,
-                 back_image: Path | str | CardImage = None):
-        self.__size = size
+    def __init__(self, front: Path | str | CardImage,
+                 back: Path | str | CardImage = None, /, size: Size = None):
 
-        if isinstance(front_image, Path) or isinstance(front_image, str):
-            self.__front_image = CardImage(front_image, size)
-        elif isinstance(front_image, CardImage):
-            if size != front_image.size:
-                raise ValueError("front_image is not the same size than the card")
-            self.__front_image = front_image
+        if isinstance(front, Path) or isinstance(front, str):
+            if size is None:
+                raise ValueError("size must be specified when not using a CardImage as front")
+            front = CardImage(front, size)
+        elif isinstance(front, CardImage):
+            if size is None:
+                size = front.size
+            elif size != front.size:
+                raise ValueError("front image is not of the same size as the card")
         else:
-            raise TypeError(f"{type(front_image)} is not a valid front_image")
+            raise TypeError(f"{type(front)} is not a valid image")
 
-        self.__back_image = back_image
-        if back_image is not None:
-            if isinstance(back_image, Path) or isinstance(back_image, str):
-                self.__back_image = CardImage(back_image, size)
-            elif isinstance(front_image, CardImage):
-                if size != back_image.size:
-                    raise ValueError("front_image is not the same size than the card")
+        if back is not None:
+            if isinstance(back, Path) or isinstance(back, str):
+                back = CardImage(back, size)
+            elif isinstance(back, CardImage):
+                if size != back.size:
+                    raise ValueError("back image is not of the same size as the card")
             else:
-                raise TypeError(f"{type(back_image)} is not a valid back_image")
+                raise TypeError(f"{type(back)} is not a valid image")
+
+        self.__size = size
+        self.__front = front
+        self.__back = back
 
     @property
     def size(self) -> Size:
         return self.__size
 
     @property
-    def front_image(self) -> CardImage:
-        return self.__front_image
+    def front(self) -> CardImage:
+        return self.__front
 
     @property
-    def back_image(self) -> CardImage:
-        return self.__back_image
+    def back(self) -> CardImage:
+        return self.__back
 
     @property
     def two_sided(self) -> bool:
         """Return if the card in one or two sided."""
-        return self.back_image is not None
+        return self.back is not None
