@@ -1,10 +1,15 @@
 """Definition file module."""
 from __future__ import annotations
 
-import copy
 import yaml
 
+from copy import deepcopy
+from functools import partial
 from pathlib import Path
+
+from .deck import Deck
+from .measure import Size
+from .sheet import Sheet
 
 
 class Definition:
@@ -24,10 +29,17 @@ class Definition:
 
     def _validate(values: dict) -> dict:
         if values is None:
-            raise ValueError(f"Expected a dictionary, None found")
+            raise ValueError("Expected a dictionary, None found")
 
         return values
 
     @property
+    def decks(self) -> list[Deck]:
+        decks = []
+        for name, deck_definition in self.__values['decks'].items():
+            decks.append(Deck(size=Size.from_str(deck_definition['size']), name=name))
+        return decks
+
+    @property
     def values(self) -> dict:
-        return copy.deepcopy(self.__values)
+        return deepcopy(self.__values)
