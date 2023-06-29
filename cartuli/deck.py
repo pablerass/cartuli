@@ -24,7 +24,7 @@ class Deck:
 
         self.__cards = []
         if cards is not None:
-            self.add_cards(cards)
+            self.add(cards)
 
         self.__name = name
 
@@ -73,7 +73,7 @@ class Deck:
     def __len__(self):
         return len(self.__cards)
 
-    def add_cards(self, cards: Card | list[Card], index: int = None):
+    def add(self, cards: Card | list[Card], index: int = None):
         if isinstance(cards, Card):
             self.__add_card(cards, index)
         else:

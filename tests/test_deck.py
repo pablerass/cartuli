@@ -14,11 +14,11 @@ def test_deck(random_image):
     assert not deck.two_sided
 
     with pytest.raises(ValueError):
-        deck.add_cards(Card(random_image, size=CHIMERA))
+        deck.add(Card(random_image, size=CHIMERA))
 
 
 def test_deck_with_back(card_image):
     deck = Deck(Card(card_image), back=card_image)
     assert deck.two_sided
     with pytest.raises(ValueError):
-        deck.add_cards(Card(card_image, card_image, size=STANDARD))
+        deck.add(Card(card_image, card_image, size=STANDARD))
