@@ -69,21 +69,21 @@ def test_sheet_margins():
     assert isclose(card_sheet.vertical_margin, 12.5*mm)
 
 
-def test_sheet_page_cards():
+def test_sheet_page_cards(random_image):
     cards_set_1 = [
-        Card("f01", size=STANDARD),
-        Card("f02", size=STANDARD),
-        Card("f03", size=STANDARD),
-        Card("f04", size=STANDARD),
-        Card("f05", size=STANDARD),
-        Card("f06", size=STANDARD),
-        Card("f07", size=STANDARD)
+        Card(random_image, size=STANDARD),
+        Card(random_image, size=STANDARD),
+        Card(random_image, size=STANDARD),
+        Card(random_image, size=STANDARD),
+        Card(random_image, size=STANDARD),
+        Card(random_image, size=STANDARD),
+        Card(random_image, size=STANDARD)
     ]
     cards_set_2 = [
-        Card("f08", size=STANDARD),
-        Card("f09", size=STANDARD),
-        Card("f10", size=STANDARD),
-        Card("f11", size=STANDARD)
+        Card(random_image, size=STANDARD),
+        Card(random_image, size=STANDARD),
+        Card(random_image, size=STANDARD),
+        Card(random_image, size=STANDARD)
     ]
     sheet = Sheet(card_size=STANDARD, size=A4, margin=2*mm, padding=4*mm, print_margin=0)
     num_cards_per_page = sheet.num_cards_per_page

@@ -38,11 +38,11 @@ class Deck:
 
     @property
     def cards(self) -> list[Card]:
-        return deepcopy(self.__card)
+        return tuple(self.__cards)
 
     @property
     def back(self) -> CardImage:
-        self.__back
+        return self.__back
 
     def __add_card(self, card: Card, index: int = None):
         if self.__size is None:
@@ -52,13 +52,26 @@ class Deck:
             raise ValueError(f"Card size {card.size} distinct from deck {self.size} card size")
         if self.back is not None and card.back is not None and self.back != card.back:
             raise ValueError("Card back image is different from the deck one")
-        if self.back:
-            card.back = self.back
+
+        if self.back is not None:
+            try:
+                card.back = self.back
+            except AttributeError:
+                raise ValueError("Card back image can not be set to deck one")
 
         if index is None:
             self.__cards.append(card)
         else:
             self.__cards.insert(card)
+
+    @property
+    def two_sided(self) -> bool:
+        if not self.__cards:
+            raise AttributeError("Deck is empty, is not yet one sided or two sided ")
+        return self.__cards[0].two_sided
+
+    def __len__(self):
+        return len(self.__cards)
 
     def add_cards(self, cards: Card | list[Card], index: int = None):
         if isinstance(cards, Card):
@@ -70,6 +83,3 @@ class Deck:
             else:
                 for n, card in enumerate(cards):
                     self.__add_card(card, index + n)
-
-    def __len__(self):
-        return len(self.__cards)

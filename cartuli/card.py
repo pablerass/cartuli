@@ -19,6 +19,7 @@ class CardImage:
             image = Path(image)
         if isinstance(image, Path):
             self.__image_path = image
+            self.__image = Image.open(self.__image_path)
         elif isinstance(image, Image.Image):
             self.__image = image
         else:
@@ -33,9 +34,6 @@ class CardImage:
 
     @property
     def image(self) -> Image.Image:
-        if self.__image is None:
-            self.__image = Image.open(self.__image_path)
-
         return self.__image
 
     @property
@@ -63,8 +61,8 @@ class CardImage:
 class Card:
     """One or two sided card representation."""
 
-    def __init__(self, front: Path | str | CardImage,
-                 back: Path | str | CardImage = None, /, size: Size = None):
+    def __init__(self, front: Path | str | CardImage, back: Path | str | CardImage = None, /,
+                 size: Size = None, name: str = None):
 
         if isinstance(front, Path) or isinstance(front, str):
             if size is None:
@@ -90,6 +88,7 @@ class Card:
         self.__size = size
         self.__front = front
         self.__back = back
+        self.__name = name
 
     @property
     def size(self) -> Size:
@@ -103,7 +102,24 @@ class Card:
     def back(self) -> CardImage:
         return self.__back
 
+    @back.setter
+    def back(self, back: Path | str | CardImage):
+        if self.__back is not None:
+            raise AttributeError("can't set attribute 'back' if already set")
+
+        if isinstance(back, Path) or isinstance(back, str):
+            back = CardImage(back, self.__size)
+        elif isinstance(back, CardImage):
+            if self.__size != back.size:
+                raise ValueError("back is not of the same size as the card")
+        else:
+            raise TypeError(f"{type(back)} is not a valid image")
+        self.__back = back
+
+    @property
+    def name(self) -> str:
+        return self.__name
+
     @property
     def two_sided(self) -> bool:
-        """Return if the card in one or two sided."""
         return self.back is not None
