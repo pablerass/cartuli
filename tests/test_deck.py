@@ -17,8 +17,8 @@ def test_deck(random_image):
         deck.add(Card(random_image, size=CHIMERA))
 
 
-def test_deck_with_back(card_image):
-    deck = Deck(Card(card_image), back=card_image)
+def test_deck_with_back(random_card_image):
+    deck = Deck(Card(random_card_image), back=random_card_image)
     assert deck.two_sided
     with pytest.raises(ValueError):
-        deck.add(Card(card_image, card_image, size=STANDARD))
+        deck.add(Card(random_card_image, random_card_image, size=STANDARD))

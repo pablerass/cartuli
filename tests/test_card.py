@@ -4,12 +4,12 @@ from cartuli.card import Card, CardImage
 from cartuli.measure import STANDARD, CHIMERA, Size
 
 
-def test_card_image(random_image):
+def test_card_image(fixture_file):
     with pytest.raises(FileNotFoundError):
         CardImage("unexistent_image.png", size=STANDARD)
 
-    assert CardImage(random_image, STANDARD).resolution == Size(6.666, 6.815)
-    assert CardImage(random_image, STANDARD*2).resolution == Size(6.666, 6.815)/2
+    assert CardImage(fixture_file("card.png"), STANDARD).resolution == Size(6.666, 6.815)
+    assert CardImage(fixture_file("card.png"), STANDARD*2).resolution == Size(6.666, 6.815)/2
 
 
 def test_card_from_path(random_image):
