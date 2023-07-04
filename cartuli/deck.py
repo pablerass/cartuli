@@ -8,6 +8,7 @@ from .measure import Size
 
 class Deck:
     # TUNE: Use dataclasses
+    # TODO: Remove back image and size from deck
     def __init__(self, cards: list[Card] = None, /, name: str = '',
                  back: Path | str | CardImage = None, size: Size = None):
         if isinstance(back, Path) or isinstance(back, str):
@@ -34,6 +35,9 @@ class Deck:
 
     @property
     def size(self) -> Size:
+        if self.__size is None:
+            # TUNE: Find better error test
+            raise AttributeError('size is not yet set')
         return self.__size
 
     @property
@@ -43,6 +47,15 @@ class Deck:
     @property
     def back(self) -> CardImage:
         return self.__back
+
+    @property
+    def two_sided(self) -> bool:
+        if not self.__cards:
+            raise AttributeError("Deck is empty, is not yet one sided or two sided ")
+        return self.__cards[0].two_sided
+
+    def __len__(self):
+        return len(self.__cards)
 
     def __add_card(self, card: Card, index: int = None):
         if self.__size is None:
@@ -63,15 +76,6 @@ class Deck:
             self.__cards.append(card)
         else:
             self.__cards.insert(card)
-
-    @property
-    def two_sided(self) -> bool:
-        if not self.__cards:
-            raise AttributeError("Deck is empty, is not yet one sided or two sided ")
-        return self.__cards[0].two_sided
-
-    def __len__(self):
-        return len(self.__cards)
 
     def add(self, cards: Card | list[Card], index: int = None):
         if isinstance(cards, Card):

@@ -72,19 +72,19 @@ def test_sheet_margins():
 
 def test_sheet_page_cards(random_image):
     cards_set_1 = (
-        Card(random_image, size=STANDARD),
-        Card(random_image, size=STANDARD),
-        Card(random_image, size=STANDARD),
-        Card(random_image, size=STANDARD),
-        Card(random_image, size=STANDARD),
-        Card(random_image, size=STANDARD),
-        Card(random_image, size=STANDARD)
+        Card(random_image(), size=STANDARD),
+        Card(random_image(), size=STANDARD),
+        Card(random_image(), size=STANDARD),
+        Card(random_image(), size=STANDARD),
+        Card(random_image(), size=STANDARD),
+        Card(random_image(), size=STANDARD),
+        Card(random_image(), size=STANDARD)
     )
     cards_set_2 = (
-        Card(random_image, size=STANDARD),
-        Card(random_image, size=STANDARD),
-        Card(random_image, size=STANDARD),
-        Card(random_image, size=STANDARD)
+        Card(random_image(), size=STANDARD),
+        Card(random_image(), size=STANDARD),
+        Card(random_image(), size=STANDARD),
+        Card(random_image(), size=STANDARD)
     )
     sheet = Sheet(Deck(size=STANDARD), size=A4, margin=2*mm, padding=4*mm, print_margin=0)
     num_cards_per_page = sheet.num_cards_per_page

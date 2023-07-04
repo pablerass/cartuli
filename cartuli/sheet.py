@@ -216,18 +216,19 @@ class Sheet(object):
         """Create the sheet PDF with all added cards."""
         logger = logging.getLogger('cartuli.Sheet.create_pdf')
 
+        # TODO: Implement two sided
         # TODO: Add title to PDF document
         c = canvas.Canvas(path, pagesize=tuple(self.size))
         for page in range(1, self.pages + 1):
             for i, card in enumerate(self.page_cards(page)):
                 num_card = i + 1
-                card_image = card.front_image.image
+                card_image = card.front.image
                 card_coordinates = self.card_coordinates(num_card)
                 card_position = self.card_position(card_coordinates)
-                logger.debug(f"Adding {num_card} card {card.front_image} to page {page} at {card_coordinates} position")
+                logger.debug(f"Adding {num_card} card {card.front} to page {page} at {card_coordinates} position")
                 c.drawImage(ImageReader(card_image),
-                            card_position.x - card.front_image.bleed, card_position.y - card.front_image.bleed,
-                            card.front_image.image_size.width, card.front_image.image_size.height)
+                            card_position.x - card.front.bleed, card_position.y - card.front.bleed,
+                            card.front.image_size.width, card.front.image_size.height)
 
             # TODO: Only draw crop marks in the back page if it is two sided
             for line in self.crop_marks:

@@ -9,8 +9,10 @@ from .measure import Size
 class CardImage:
     """Card image."""
 
+    DEFAULT_BLEED = 0.0
+
     # TUNE: Size is duplicated between image and card
-    def __init__(self, image: Path | str | Image.Image, /, size: Size, bleed: float = 0.0):
+    def __init__(self, image: Path | str | Image.Image, /, size: Size, bleed: float = DEFAULT_BLEED):
         self.__image_path = None
         self.__image = None
         self.__resolution = None
