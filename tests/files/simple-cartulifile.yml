@@ -1,0 +1,18 @@
+decks:
+  cards:
+    size: "(44*mm,75*mm)"
+    front:
+      images: "cards/*.png"
+      bleed: "3*mm"
+    back:
+      image: "card-back.png"
+      bleed: "3*mm"
+  tokens:
+    size: "(30*cm,34*cm)"
+    front:
+      images: "tokens/*.png"
+      bleed: "3*mm"
+outputs:
+  sheet:
+    size: "(33*cm,48*cm)"
+    print_margin: "1*cm"

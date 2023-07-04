@@ -3,41 +3,42 @@ import pytest
 from math import isclose
 
 from cartuli.card import Card
+from cartuli.deck import Deck
 from cartuli.measure import Coordinates, Point, Size, Line, mm, inch, A4, STANDARD, MINI_CHIMERA, MINI_USA, TAROT
 from cartuli.sheet import Sheet
 
 
 def test_sheet_cards_per_page():
-    sheet_standard = Sheet(card_size=STANDARD, size=A4, margin=2*mm, padding=4*mm, print_margin=1*inch)
+    sheet_standard = Sheet(Deck(size=STANDARD), size=A4, margin=2*mm, padding=4*mm, print_margin=1*inch)
     assert sheet_standard.cards_per_page == Size(2, 2)
     assert sheet_standard.num_cards_per_page == 4
 
-    sheet_standard = Sheet(card_size=STANDARD, size=A4, margin=2*mm, padding=4*mm, print_margin=0)
+    sheet_standard = Sheet(Deck(size=STANDARD), size=A4, margin=2*mm, padding=4*mm, print_margin=0)
     assert sheet_standard.cards_per_page == Size(3, 3)
     assert sheet_standard.num_cards_per_page == 9
 
-    sheet_chimera = Sheet(card_size=MINI_CHIMERA, size=A4, margin=2*mm, padding=4*mm, print_margin=0)
+    sheet_chimera = Sheet(Deck(size=MINI_CHIMERA), size=A4, margin=2*mm, padding=4*mm, print_margin=0)
     assert sheet_chimera.cards_per_page == Size(4, 4)
     assert sheet_chimera.num_cards_per_page == 16
 
-    sheet_mini_usa = Sheet(card_size=MINI_USA, size=A4, margin=2*mm, padding=0, print_margin=0)
+    sheet_mini_usa = Sheet(Deck(size=MINI_USA), size=A4, margin=2*mm, padding=0, print_margin=0)
     assert sheet_mini_usa.cards_per_page == Size(5, 4)
     assert sheet_mini_usa.num_cards_per_page == 20
 
-    sheet_tarot = Sheet(card_size=TAROT, size=A4, margin=2*mm, padding=4*mm, print_margin=0)
+    sheet_tarot = Sheet(Deck(size=TAROT), size=A4, margin=2*mm, padding=4*mm, print_margin=0)
     assert sheet_tarot.cards_per_page == Size(2, 2)
     assert sheet_tarot.num_cards_per_page == 4
 
 
 def test_sheet_card_page():
-    card_sheet = Sheet(card_size=STANDARD, size=A4, margin=5*mm, padding=4*mm, print_margin=0)
+    card_sheet = Sheet(Deck(size=STANDARD), size=A4, margin=5*mm, padding=4*mm, print_margin=0)
     assert card_sheet.card_page(4) == 1
     assert card_sheet.card_page(10) == 2
     assert card_sheet.card_page(30) == 4
 
 
 def test_sheet_card_coordinates():
-    card_sheet = Sheet(card_size=STANDARD, size=A4, margin=5*mm, padding=4*mm, print_margin=0)
+    card_sheet = Sheet(Deck(size=STANDARD), size=A4, margin=5*mm, padding=4*mm, print_margin=0)
     assert card_sheet.card_coordinates(1) == Coordinates(0, 0)
     assert card_sheet.card_coordinates(2) == Coordinates(1, 0)
     assert card_sheet.card_coordinates(3) == Coordinates(2, 0)
@@ -52,7 +53,7 @@ def test_sheet_card_coordinates():
 
 
 def test_sheet_card_position():
-    card_sheet = Sheet(card_size=STANDARD, size=A4, margin=5*mm, padding=4*mm, print_margin=0)
+    card_sheet = Sheet(Deck(size=STANDARD), size=A4, margin=5*mm, padding=4*mm, print_margin=0)
     assert (card_sheet.card_position(Coordinates(0, 0)) ==
             Point(5.75*mm, A4.height - STANDARD.height - 12.5*mm))
     assert (card_sheet.card_position(Coordinates(2, 0)) ==
@@ -64,61 +65,60 @@ def test_sheet_card_position():
 
 
 def test_sheet_margins():
-    card_sheet = Sheet(card_size=STANDARD, size=A4, margin=5*mm, padding=4*mm, print_margin=0)
+    card_sheet = Sheet(Deck(size=STANDARD), size=A4, margin=5*mm, padding=4*mm, print_margin=0)
     assert isclose(card_sheet.horizontal_margin, 5.75*mm)
     assert isclose(card_sheet.vertical_margin, 12.5*mm)
 
 
-def test_sheet_page_cards():
-    cards_set_1 = [
-        Card(STANDARD, "f01"),
-        Card(STANDARD, "f02"),
-        Card(STANDARD, "f03"),
-        Card(STANDARD, "f04"),
-        Card(STANDARD, "f05"),
-        Card(STANDARD, "f06"),
-        Card(STANDARD, "f07")
-    ]
-    cards_set_2 = [
-        # Card(STANDARD, "f08", "b08"),
-        Card(STANDARD, "f08"),
-        Card(STANDARD, "f09"),
-        # Card(STANDARD"f10", "b10"),
-        Card(STANDARD, "f10"),
-        Card(STANDARD, "f11")
-    ]
-    sheet = Sheet(card_size=STANDARD, size=A4, margin=2*mm, padding=4*mm, print_margin=0)
+def test_sheet_page_cards(random_image):
+    cards_set_1 = (
+        Card(random_image(), size=STANDARD),
+        Card(random_image(), size=STANDARD),
+        Card(random_image(), size=STANDARD),
+        Card(random_image(), size=STANDARD),
+        Card(random_image(), size=STANDARD),
+        Card(random_image(), size=STANDARD),
+        Card(random_image(), size=STANDARD)
+    )
+    cards_set_2 = (
+        Card(random_image(), size=STANDARD),
+        Card(random_image(), size=STANDARD),
+        Card(random_image(), size=STANDARD),
+        Card(random_image(), size=STANDARD)
+    )
+    sheet = Sheet(Deck(size=STANDARD), size=A4, margin=2*mm, padding=4*mm, print_margin=0)
     num_cards_per_page = sheet.num_cards_per_page
 
     assert sheet.pages == 0
-    # assert not sheet.two_sided
-    assert sheet.page_cards(1) == []
+    with pytest.raises(AttributeError):
+        sheet.two_sided
+    assert sheet.page_cards(1) == ()
 
-    sheet.add_cards(cards_set_1)
+    sheet.deck.add(cards_set_1)
     assert sheet.pages == 1
-    # assert not sheet.two_sided
+    assert not sheet.two_sided
     assert sheet.page_cards(1) == cards_set_1
-    assert sheet.page_cards(2) == []
+    assert sheet.page_cards(2) == ()
 
-    sheet.add_cards(cards_set_2)
+    sheet.deck.add(cards_set_2)
     assert sheet.pages == 2
-    # assert sheet.two_sided
+    assert not sheet.two_sided
     assert sheet.page_cards(1) == (cards_set_1 + cards_set_2)[:num_cards_per_page]
     assert sheet.page_cards(2) == (cards_set_1 + cards_set_2)[num_cards_per_page:]
 
-    sheet.add_cards(cards_set_1)
+    sheet.deck.add(cards_set_1)
     assert sheet.pages == 2
-    # assert sheet.two_sided
+    assert not sheet.two_sided
     assert sheet.page_cards(1) == (cards_set_1 + cards_set_2)[:num_cards_per_page]
     assert sheet.page_cards(2) == (cards_set_1 + cards_set_2 + cards_set_1)[num_cards_per_page:]
 
-    sheet.add_cards(cards_set_1)
+    sheet.deck.add(cards_set_1)
     assert sheet.pages == 3
-    # assert sheet.two_sided
+    assert not sheet.two_sided
 
 
 def test_sheet_crop_marks():
-    card_sheet = Sheet(card_size=STANDARD, size=A4, margin=2*mm, padding=4*mm,
+    card_sheet = Sheet(Deck(size=STANDARD), size=A4, margin=2*mm, padding=4*mm,
                        crop_marks_padding=1*mm, print_margin=3*mm)
 
     # Horizontal margin = 5.75

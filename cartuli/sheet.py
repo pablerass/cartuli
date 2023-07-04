@@ -2,10 +2,12 @@
 import logging
 
 from math import ceil
+from pathlib import Path
 from reportlab.lib.utils import ImageReader
 from reportlab.pdfgen import canvas
 
 from .card import Card
+from .deck import Deck
 from .measure import Coordinates, Point, Size, Line, A4, mm, inch, STANDARD
 
 
@@ -18,18 +20,17 @@ class Sheet(object):
     DEFAULT_CROP_MARKS_PADDING = 0.5*mm
     DEFAULT_PRINT_MARGIN = 1*inch          # Default print margin for common printers
 
-    def __init__(self, /, card_size: Size = STANDARD, size: Size = DEFAULT_SIZE, margin: float = DEFAULT_MARGIN,
+    def __init__(self, deck: Deck, /, size: Size = DEFAULT_SIZE, margin: float = DEFAULT_MARGIN,
                  padding: float = DEFAULT_PADDING, crop_marks_padding=DEFAULT_CROP_MARKS_PADDING,
                  print_margin: float = DEFAULT_PRINT_MARGIN):
         """Create Sheet object."""
-        self.__card_size = card_size
+        self.__deck = deck
         self.__size = size
         self.__margin = margin
         self.__padding = padding
         self.__crop_marks_padding = crop_marks_padding
         self.__print_margin = print_margin
 
-        self.__cards = []
         self.__cards_per_page = None
         self.__num_cards_per_page = None
         self.__horizontal_margin = None
@@ -37,9 +38,14 @@ class Sheet(object):
         self.__crop_marks = None
 
     @property
+    def deck(self) -> Deck:
+        """Return sheet card size."""
+        return self.__deck
+
+    @property
     def card_size(self) -> Size:
         """Return sheet card size."""
-        return self.__card_size
+        return self.__deck.size
 
     @property
     def size(self) -> Size:
@@ -85,11 +91,6 @@ class Sheet(object):
     def print_margin(self) -> float:
         """Return sheet print margin."""
         return self.__print_margin
-
-    @property
-    def cards(self) -> list[Card]:
-        """Return current sheet cards."""
-        return self.__cards
 
     @property
     def cards_per_page(self) -> Size:
@@ -200,46 +201,34 @@ class Sheet(object):
     @property
     def pages(self) -> int:
         """Return the current number of pages."""
-        return ceil(len(self.__cards) / self.num_cards_per_page)
+        return ceil(len(self.__deck) / self.num_cards_per_page)
 
-    # @property
-    # def two_sided(self) -> bool:
-    #     """Return if the card has two sides."""
-    #     return any([card.back_image is not None for card in self.cards])
-
-    def add_cards(self, cards: Card | list[Card]) -> None:
-        """Add cards to sheet."""
-        if isinstance(cards, Card):
-            cards = (cards,)
-
-        for i, card in enumerate(cards):
-            if card.size is not None and card.size != self.__card_size:
-                raise ValueError(f"{card.size} does not fit in sheet")
-            if card.back_image is not None:
-                raise ValueError("Only one side cards are supported")
-
-            self.__cards.append(card)
+    @property
+    def two_sided(self) -> bool:
+        """Return if the card has two sides."""
+        return self.__deck.two_sided
 
     def page_cards(self, page: int) -> list[Card]:
         """Return the cards that belong to a page."""
-        return self.cards[(page - 1)*self.num_cards_per_page:page*self.num_cards_per_page]
+        return self.__deck.cards[(page - 1)*self.num_cards_per_page:page*self.num_cards_per_page]
 
-    def create_pdf(self, base_name: str) -> None:
+    def create_pdf(self, path: Path | str = None) -> None:
         """Create the sheet PDF with all added cards."""
         logger = logging.getLogger('cartuli.Sheet.create_pdf')
 
+        # TODO: Implement two sided
         # TODO: Add title to PDF document
-        c = canvas.Canvas(f"{base_name}", pagesize=tuple(self.size))
+        c = canvas.Canvas(path, pagesize=tuple(self.size))
         for page in range(1, self.pages + 1):
             for i, card in enumerate(self.page_cards(page)):
                 num_card = i + 1
-                card_image = card.front_image.image
+                card_image = card.front.image
                 card_coordinates = self.card_coordinates(num_card)
                 card_position = self.card_position(card_coordinates)
-                logger.debug(f"Adding {num_card} card {card.front_image} to page {page} at {card_coordinates} position")
+                logger.debug(f"Adding {num_card} card {card.front} to page {page} at {card_coordinates} position")
                 c.drawImage(ImageReader(card_image),
-                            card_position.x - card.front_image.bleed, card_position.y - card.front_image.bleed,
-                            card.front_image.image_size.width, card.front_image.image_size.height)
+                            card_position.x - card.front.bleed, card_position.y - card.front.bleed,
+                            card.front.image_size.width, card.front.image_size.height)
 
             # TODO: Only draw crop marks in the back page if it is two sided
             for line in self.crop_marks:
