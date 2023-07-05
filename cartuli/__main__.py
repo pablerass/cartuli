@@ -38,7 +38,12 @@ def main(args=None):
         logging.getLogger('PIL').propagate = False
     logger = logging.getLogger('cartuli')
 
-    os.chdir(Path(args.definition_file))
+    # Definition paths are relative to definition file
+    definition_dir = Path(args.definition_file)
+    if not definition_dir.is_dir():
+        definition_dir = definition_dir.parent
+    os.chdir(definition_dir)
+
     definition = Definition.from_file(args.definition_file)
     for sheet in definition.sheets:
         sheet_file = f"{sheet.deck.name}.pdf"
