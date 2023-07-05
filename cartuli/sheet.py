@@ -8,7 +8,7 @@ from reportlab.pdfgen import canvas
 
 from .card import Card
 from .deck import Deck
-from .measure import Coordinates, Point, Size, Line, A4, mm, inch, STANDARD
+from .measure import Coordinates, Point, Size, Line, A4, mm, inch
 
 
 class Sheet(object):
@@ -17,7 +17,7 @@ class Sheet(object):
     DEFAULT_SIZE = A4
     DEFAULT_MARGIN = 2*mm
     DEFAULT_PADDING = 4*mm
-    DEFAULT_CROP_MARKS_PADDING = 0.5*mm
+    DEFAULT_CROP_MARKS_PADDING = 1*mm
     DEFAULT_PRINT_MARGIN = 1*inch          # Default print margin for common printers
 
     def __init__(self, deck: Deck, /, size: Size = DEFAULT_SIZE, margin: float = DEFAULT_MARGIN,
@@ -94,7 +94,7 @@ class Sheet(object):
 
     @property
     def cards_per_page(self) -> Size:
-        """Return the amount of cards that fits in each page."""
+        """Return the amount of cards in rows and columns that fits in each page."""
         if self.__cards_per_page is None:
             width = ((self.size.width - 2*self.margin - 2*self.print_margin + self.padding) /
                      (self.card_size.width + self.padding))
@@ -104,7 +104,7 @@ class Sheet(object):
         return self.__cards_per_page
 
     @property
-    def num_cards_per_page(self) -> Size:
+    def num_cards_per_page(self) -> int:
         """Return the amount of cards that fits in each page."""
         if self.__num_cards_per_page is None:
             self.__num_cards_per_page = self.cards_per_page.width * self.cards_per_page.height
@@ -114,11 +114,15 @@ class Sheet(object):
         """Return the card page based on its sequence number."""
         return card_number // (self.cards_per_page.width * self.cards_per_page.height) + 1
 
-    def card_coordinates(self, card_number: int) -> Coordinates:
+    def card_coordinates(self, card_number: int, back: bool = False) -> Coordinates:
         """Return the card coordinates based on its sequence number."""
         card_number_in_page = (card_number - 1) % (self.cards_per_page.width * self.cards_per_page.height) + 1
-        return Coordinates((card_number_in_page - 1) % self.cards_per_page.width,
-                           (card_number_in_page - 1) // self.cards_per_page.width)
+        if not back:
+            return Coordinates((card_number_in_page - 1) % self.cards_per_page.width,
+                               (card_number_in_page - 1) // self.cards_per_page.width)
+        else:
+            return Coordinates(self.cards_per_page.width - ((card_number_in_page - 1) % self.cards_per_page.width) - 1,
+                               (card_number_in_page - 1) // self.cards_per_page.width)
 
     def card_position(self, coordinates: Coordinates) -> Point:
         """Return the card position based on a coordinates."""
@@ -220,6 +224,7 @@ class Sheet(object):
         # TODO: Add title to PDF document
         c = canvas.Canvas(path, pagesize=tuple(self.size))
         for page in range(1, self.pages + 1):
+            # Front
             for i, card in enumerate(self.page_cards(page)):
                 num_card = i + 1
                 card_image = card.front.image
@@ -230,7 +235,19 @@ class Sheet(object):
                             card_position.x - card.front.bleed, card_position.y - card.front.bleed,
                             card.front.image_size.width, card.front.image_size.height)
 
-            # TODO: Only draw crop marks in the back page if it is two sided
+            # Back
+            if self.two_sided:
+                c.showPage()
+                for i, card in enumerate(self.page_cards(page)):
+                    num_card = i + 1
+                    card_image = card.back.image
+                    card_coordinates = self.card_coordinates(num_card, back=True)
+                    card_position = self.card_position(card_coordinates)
+                    logger.debug(f"Adding {num_card} card {card.front} to page {page} at {card_coordinates} position")
+                    c.drawImage(ImageReader(card_image),
+                                card_position.x - card.front.bleed, card_position.y - card.front.bleed,
+                                card.front.image_size.width, card.front.image_size.height)
+
             for line in self.crop_marks:
                 c.setLineWidth(0.5)
                 c.line(*list(line))

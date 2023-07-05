@@ -75,18 +75,20 @@ class Definition:
 
     @property
     def sheets(self) -> tuple[Sheet]:
-        logger = logging.getLogger('cartuli.definition.Definition.sheets')
         # TODO: Replace sheets with generic outputs
         # TODO: Add deck filters to output definition
-        # TODO: Add more possible configuration values
         if self.__sheets is None:
             if 'sheet' in self.__values['outputs']:
                 sheet_definition = self.__values['outputs']['sheet']
                 self.__sheets = [
                     Sheet(
                         deck,
-                        size=Size.from_str(sheet_definition.get('size', Sheet.DEFAULT_SIZE)),
-                        print_margin=eval(sheet_definition.get('print_margin', Sheet.DEFAULT_PRINT_MARGIN))
+                        size=Size.from_str(sheet_definition.get('size', str(Sheet.DEFAULT_SIZE))),
+                        margin=eval(sheet_definition.get('margin', str(Sheet.DEFAULT_MARGIN))),
+                        padding=eval(sheet_definition.get('padding', str(Sheet.DEFAULT_PADDING))),
+                        crop_marks_padding=eval(sheet_definition.get('crop_marks_padding',
+                                                                     str(Sheet.DEFAULT_CROP_MARKS_PADDING))),
+                        print_margin=eval(sheet_definition.get('print_margin', str(Sheet.DEFAULT_PRINT_MARGIN)))
                     ) for deck in self.decks
                 ]
             else:

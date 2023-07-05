@@ -52,6 +52,21 @@ def test_sheet_card_coordinates():
     assert card_sheet.card_coordinates(18) == Coordinates(2, 2)
 
 
+def test_sheet_card_coordinates_back():
+    card_sheet = Sheet(Deck(size=STANDARD), size=A4, margin=5*mm, padding=4*mm, print_margin=0)
+    assert card_sheet.card_coordinates(1, back=True) == Coordinates(2, 0)
+    assert card_sheet.card_coordinates(2, back=True) == Coordinates(1, 0)
+    assert card_sheet.card_coordinates(3, back=True) == Coordinates(0, 0)
+    assert card_sheet.card_coordinates(4, back=True) == Coordinates(2, 1)
+    assert card_sheet.card_coordinates(5, back=True) == Coordinates(1, 1)
+    assert card_sheet.card_coordinates(6, back=True) == Coordinates(0, 1)
+    assert card_sheet.card_coordinates(7, back=True) == Coordinates(2, 2)
+    assert card_sheet.card_coordinates(8, back=True) == Coordinates(1, 2)
+    assert card_sheet.card_coordinates(9, back=True) == Coordinates(0, 2)
+    assert card_sheet.card_coordinates(10, back=True) == Coordinates(2, 0)
+    assert card_sheet.card_coordinates(18, back=True) == Coordinates(0, 2)
+
+
 def test_sheet_card_position():
     card_sheet = Sheet(Deck(size=STANDARD), size=A4, margin=5*mm, padding=4*mm, print_margin=0)
     assert (card_sheet.card_position(Coordinates(0, 0)) ==
@@ -118,12 +133,12 @@ def test_sheet_page_cards(random_image):
 
 
 def test_sheet_crop_marks():
-    card_sheet = Sheet(Deck(size=STANDARD), size=A4, margin=2*mm, padding=4*mm,
-                       crop_marks_padding=1*mm, print_margin=3*mm)
+    sheet = Sheet(Deck(size=STANDARD), size=A4, margin=2*mm, padding=4*mm,
+                  crop_marks_padding=1*mm, print_margin=3*mm)
 
     # Horizontal margin = 5.75
     # Vertical margin = 12.5
-    assert sorted(card_sheet.crop_marks) == sorted([
+    assert sorted(sheet.crop_marks) == sorted([
         Line(Point(5.75*mm, 3*mm), Point(5.75*mm, 11.5*mm)),
         Line(Point(5.75*mm, 101.5*mm), Point(5.75*mm, 103.5*mm)),
         Line(Point(5.75*mm, 193.5*mm), Point(5.75*mm, 195.5*mm)),
@@ -173,3 +188,11 @@ def test_sheet_crop_marks():
         Line(Point(137.75*mm, 284.5*mm), Point(139.75*mm, 284.5*mm)),
         Line(Point(A4.width - 4.75*mm, 284.5*mm), Point(A4.width - 3*mm, 284.5*mm))
     ])
+
+
+def test_sheet_two_sides(random_image):
+    sheet = Sheet(
+        Deck(Card(random_image(size=STANDARD), random_image(size=STANDARD), size=STANDARD)),
+        size=A4
+    )
+    assert sheet.two_sided
