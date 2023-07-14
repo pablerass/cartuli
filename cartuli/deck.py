@@ -1,5 +1,4 @@
 """Deck module."""
-from copy import deepcopy
 from pathlib import Path
 
 from .card import Card, CardImage
@@ -8,19 +7,18 @@ from .measure import Size
 
 class Deck:
     # TUNE: Use dataclasses
-    # TODO: Remove back image and size from deck
     def __init__(self, cards: list[Card] = None, /, name: str = '',
-                 back: Path | str | CardImage = None, size: Size = None):
-        if isinstance(back, Path) or isinstance(back, str):
+                 default_back: Path | str | CardImage = None, size: Size = None):
+        if isinstance(default_back, Path) or isinstance(default_back, str):
             if size is None:
-                raise ValueError("card size must be specified when not using a CardImage as back")
-            back = CardImage(back, size)
-        elif isinstance(back, CardImage):
+                raise ValueError("card size must be specified when not using a CardImage as default back")
+            default_back = CardImage(default_back, size)
+        elif isinstance(default_back, CardImage):
             if size is None:
-                size = back.size
-            elif size != back.size:
-                raise ValueError("back image is not of the same size as the card")
-        self.__back = back
+                size = default_back.size
+            elif size != default_back.size:
+                raise ValueError("default back image is not of the same size as the deck")
+        self.__default_back = default_back
         self.__size = size
 
         self.__cards = []
@@ -45,8 +43,8 @@ class Deck:
         return tuple(self.__cards)
 
     @property
-    def back(self) -> CardImage:
-        return self.__back
+    def default_back(self) -> CardImage:
+        return self.__default_back
 
     @property
     def two_sided(self) -> bool:
@@ -63,14 +61,13 @@ class Deck:
 
         if card.size != self.size:
             raise ValueError(f"Card size {card.size} distinct from deck {self.size} card size")
-        if self.back is not None and card.back is not None and self.back != card.back:
-            raise ValueError("Card back image is different from the deck one")
 
-        if self.back is not None:
+        if self.default_back is not None:
             try:
-                card.back = self.back
+                card.back = self.default_back
             except AttributeError:
-                raise ValueError("Card back image can not be set to deck one")
+                # Back image is already set
+                pass
 
         if index is None:
             self.__cards.append(card)

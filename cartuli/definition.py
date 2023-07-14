@@ -10,7 +10,7 @@ from pathlib import Path
 
 from .card import Card, CardImage
 from .deck import Deck
-from .measure import *      # TUNE: This is necesary to use eval with with unit values
+from .measure import Size, from_string
 from .sheet import Sheet
 
 
@@ -58,15 +58,16 @@ class Definition:
                     front_cards = [
                         Card(CardImage(
                             path, size=size,
-                            bleed=eval(deck_definition['front'].get('bleed', CardImage.DEFAULT_BLEED)))
+                            bleed=from_string(deck_definition['front'].get('bleed', str(CardImage.DEFAULT_BLEED))))
                         ) for path in glob(deck_definition['front']['images'])
                     ]
                     logger.debug(f"Found {len(front_cards)} front cards for '{name}' deck")
                 back_image = None
                 if 'back' in deck_definition:
                     back_image = CardImage(deck_definition['back']['image'], size=size,
-                                           bleed=deck_definition['back'].get('bleed', CardImage.DEFAULT_BLEED))
-                deck = Deck(front_cards, back=back_image, size=size, name=name)
+                                           bleed=from_string(deck_definition['back'].get(
+                                            'bleed', str(CardImage.DEFAULT_BLEED))))
+                deck = Deck(front_cards, default_back=back_image, size=size, name=name)
                 self.__decks.append(deck)
             if not self.__decks:
                 logger.warning('No decks loaded in definition')
@@ -84,11 +85,12 @@ class Definition:
                     Sheet(
                         deck,
                         size=Size.from_str(sheet_definition.get('size', str(Sheet.DEFAULT_SIZE))),
-                        margin=eval(sheet_definition.get('margin', str(Sheet.DEFAULT_MARGIN))),
-                        padding=eval(sheet_definition.get('padding', str(Sheet.DEFAULT_PADDING))),
-                        crop_marks_padding=eval(sheet_definition.get('crop_marks_padding',
-                                                                     str(Sheet.DEFAULT_CROP_MARKS_PADDING))),
-                        print_margin=eval(sheet_definition.get('print_margin', str(Sheet.DEFAULT_PRINT_MARGIN)))
+                        margin=from_string(sheet_definition.get('margin', str(Sheet.DEFAULT_MARGIN))),
+                        padding=from_string(sheet_definition.get('padding', str(Sheet.DEFAULT_PADDING))),
+                        crop_marks_padding=from_string(
+                            sheet_definition.get('crop_marks_padding',
+                                                 str(Sheet.DEFAULT_CROP_MARKS_PADDING))),
+                        print_margin=from_string(sheet_definition.get('print_margin', str(Sheet.DEFAULT_PRINT_MARGIN)))
                     ) for deck in self.decks
                 ]
             else:

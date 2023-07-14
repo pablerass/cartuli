@@ -22,6 +22,10 @@ __all__ = [
 isclose = partial(isclose, rel_tol=1e-04)
 
 
+def from_string(measure: str) -> float:
+    return eval(measure)
+
+
 @dataclass(frozen=True, order=True)
 class Size:
     """Size class in any measure."""

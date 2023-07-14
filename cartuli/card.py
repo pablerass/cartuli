@@ -31,10 +31,6 @@ class CardImage:
         self.__bleed = bleed
 
     @property
-    def image_path(self) -> Path:
-        return self.__image_path
-
-    @property
     def image(self) -> Image.Image:
         return self.__image
 
@@ -58,6 +54,11 @@ class CardImage:
     @property
     def image_size(self) -> Size:
         return Size(self.size.width + 2*self.bleed, self.size.height + 2*self.bleed)
+
+    def __eq__(self, other) -> bool:
+        return (self.image == other.image and
+                self.size == self.size and
+                self.bleed == self.bleed)
 
 
 class Card:
@@ -125,3 +126,9 @@ class Card:
     @property
     def two_sided(self) -> bool:
         return self.back is not None
+
+    def __eq__(self, other) -> bool:
+        return (self.front == other.front and
+                self.back == self.back and
+                self.size == self.size and
+                self.name == self.name)
