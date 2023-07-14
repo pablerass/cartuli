@@ -7,7 +7,6 @@ from reportlab.lib.utils import ImageReader
 from reportlab.pdfgen import canvas
 
 from .card import Card
-from .deck import Deck
 from .measure import Coordinates, Point, Size, Line, A4, mm, inch
 
 
@@ -20,11 +19,15 @@ class Sheet(object):
     DEFAULT_CROP_MARKS_PADDING = 1*mm
     DEFAULT_PRINT_MARGIN = 1*inch          # Default print margin for common printers
 
-    def __init__(self, deck: Deck, /, size: Size = DEFAULT_SIZE, margin: float = DEFAULT_MARGIN,
+    def __init__(self, cards: list[Card] = None, /, size: Size = DEFAULT_SIZE, margin: float = DEFAULT_MARGIN,
                  padding: float = DEFAULT_PADDING, crop_marks_padding=DEFAULT_CROP_MARKS_PADDING,
                  print_margin: float = DEFAULT_PRINT_MARGIN):
         """Create Sheet object."""
-        self.__deck = deck
+        self.__card_size = None
+        self.__cards = []
+        if cards is not None:
+            self.add(cards)
+
         self.__size = size
         self.__margin = margin
         self.__padding = padding
@@ -37,15 +40,39 @@ class Sheet(object):
         self.__vertical_margin = None
         self.__crop_marks = None
 
+    def __add_card(self, card: Card, index: int = None) -> None:
+        if self.__card_size is None:
+            self.__card_size = card.size
+
+        if card.size != self.card_size:
+            raise ValueError(f"Card size {card.size} distinct from sheet {self.card_size} card size")
+
+        if index is None:
+            self.__cards.append(card)
+        else:
+            self.__cards.insert(card)
+
+    def add(self, cards: list[Card], index: int = None) -> None:
+        if isinstance(cards, Card):
+            cards = [cards]
+        if index is None:
+            for card in cards:
+                self.__add_card(card)
+        else:
+            for n, card in enumerate(cards):
+                self.__add_card(card, index + n)
+
     @property
-    def deck(self) -> Deck:
+    def cards(self) -> Card:
         """Return sheet card size."""
-        return self.__deck
+        return tuple(self.__cards)
 
     @property
     def card_size(self) -> Size:
         """Return sheet card size."""
-        return self.__deck.size
+        if self.__card_size is None:
+            raise AttributeError('card size is not yet available as no card has been added')
+        return self.__card_size
 
     @property
     def size(self) -> Size:
@@ -56,6 +83,9 @@ class Sheet(object):
     def margin(self) -> float:
         """Return sheet margin."""
         return self.__margin
+
+    def __len__(self):
+        return len(self.__cards)
 
     @property
     def horizontal_margin(self) -> float:
@@ -205,16 +235,22 @@ class Sheet(object):
     @property
     def pages(self) -> int:
         """Return the current number of pages."""
-        return ceil(len(self.__deck) / self.num_cards_per_page)
+        if not self.__cards:
+            return 0
+        return ceil(len(self.__cards) / self.num_cards_per_page)
 
     @property
     def two_sided(self) -> bool:
-        """Return if the card has two sides."""
-        return self.__deck.two_sided
+        """Return if sheet cards have two sides."""
+        if not self.__cards:
+            raise AttributeError("Deck is empty, is not yet one sided or two sided ")
+        return self.__cards[0].two_sided
 
     def page_cards(self, page: int) -> list[Card]:
         """Return the cards that belong to a page."""
-        return self.__deck.cards[(page - 1)*self.num_cards_per_page:page*self.num_cards_per_page]
+        if not self.__cards:
+            return ()
+        return tuple(self.__cards[(page - 1)*self.num_cards_per_page:page*self.num_cards_per_page])
 
     def create_pdf(self, path: Path | str = None) -> None:
         """Create the sheet PDF with all added cards."""

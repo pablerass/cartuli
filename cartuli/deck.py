@@ -34,8 +34,7 @@ class Deck:
     @property
     def size(self) -> Size:
         if self.__size is None:
-            # TUNE: Find better error test
-            raise AttributeError('size is not yet set')
+            raise AttributeError('size is not yet available as no card has been added')
         return self.__size
 
     @property
@@ -48,12 +47,10 @@ class Deck:
 
     @property
     def two_sided(self) -> bool:
+        """Return if deck cards have two sides."""
         if not self.__cards:
             raise AttributeError("Deck is empty, is not yet one sided or two sided ")
         return self.__cards[0].two_sided
-
-    def __len__(self):
-        return len(self.__cards)
 
     def __add_card(self, card: Card, index: int = None):
         if self.__size is None:
@@ -76,11 +73,13 @@ class Deck:
 
     def add(self, cards: Card | list[Card], index: int = None):
         if isinstance(cards, Card):
-            self.__add_card(cards, index)
+            cards = [cards]
+        if index is None:
+            for card in cards:
+                self.__add_card(card)
         else:
-            if index is None:
-                for card in cards:
-                    self.__add_card(card)
-            else:
-                for n, card in enumerate(cards):
-                    self.__add_card(card, index + n)
+            for n, card in enumerate(cards):
+                self.__add_card(card, index + n)
+
+    def __len__(self):
+        return len(self.__cards)

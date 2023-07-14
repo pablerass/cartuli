@@ -83,7 +83,7 @@ class Definition:
                 sheet_definition = self.__values['outputs']['sheet']
                 self.__sheets = [
                     Sheet(
-                        deck,
+                        deck.cards,
                         size=Size.from_str(sheet_definition.get('size', str(Sheet.DEFAULT_SIZE))),
                         margin=from_string(sheet_definition.get('margin', str(Sheet.DEFAULT_MARGIN))),
                         padding=from_string(sheet_definition.get('padding', str(Sheet.DEFAULT_PADDING))),
