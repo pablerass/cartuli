@@ -84,9 +84,9 @@ class Definition:
             if 'sheet' in self.__values['outputs']:
                 sheet_definition = self.__values['outputs']['sheet']
                 if sheet_definition.get('share', True):
-                    group_function = lambda x: x.size
+                    group_function = lambda x: x.size   # noqa: E731
                 else:
-                    group_function = lambda x: x.name
+                    group_function = lambda x: x.name   # noqa: E731
                 groups = groupby(sorted(self.decks, key=group_function), key=group_function)
                 for _, decks in groups:
                     decks = tuple(decks)  # itertools.groypby object can only be readed once

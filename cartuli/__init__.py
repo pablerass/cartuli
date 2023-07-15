@@ -16,5 +16,5 @@ __all__ = [
     MINI_USA, MINI_CHIMERA, MINI_EURO, STANDARD_USA, CHIMERA, EURO,  STANDARD, MAGNUM_COPPER,
     MAGNUM_SPACE, SMALL_SQUARE,  SQUARE, MAGNUM_SILVER, MAGNUM_GOLD, TAROT,
     Coordinates, Point, Size, mm, cm, inch,
-    Card, Sheet
+    Card, CardImage, Sheet, Deck
 ]

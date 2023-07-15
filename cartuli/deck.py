@@ -1,5 +1,4 @@
 """Deck module."""
-from itertools import groupby
 from pathlib import Path
 from typing import Iterable
 
