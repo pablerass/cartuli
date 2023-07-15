@@ -5,6 +5,7 @@ from math import ceil
 from pathlib import Path
 from reportlab.lib.utils import ImageReader
 from reportlab.pdfgen import canvas
+from typing import Iterable
 
 from .card import Card
 from .measure import Coordinates, Point, Size, Line, A4, mm, inch
@@ -19,9 +20,9 @@ class Sheet(object):
     DEFAULT_CROP_MARKS_PADDING = 1*mm
     DEFAULT_PRINT_MARGIN = 1*inch          # Default print margin for common printers
 
-    def __init__(self, cards: list[Card] = None, /, size: Size = DEFAULT_SIZE, margin: float = DEFAULT_MARGIN,
-                 padding: float = DEFAULT_PADDING, crop_marks_padding=DEFAULT_CROP_MARKS_PADDING,
-                 print_margin: float = DEFAULT_PRINT_MARGIN):
+    def __init__(self, cards: Card | Iterable[Card] = None, /, size: Size = DEFAULT_SIZE,
+                 margin: float = DEFAULT_MARGIN, padding: float = DEFAULT_PADDING,
+                 crop_marks_padding=DEFAULT_CROP_MARKS_PADDING, print_margin: float = DEFAULT_PRINT_MARGIN):
         """Create Sheet object."""
         self.__card_size = None
         self.__cards = []
@@ -52,7 +53,7 @@ class Sheet(object):
         else:
             self.__cards.insert(card)
 
-    def add(self, cards: list[Card], index: int = None) -> None:
+    def add(self, cards: Card | Iterable[Card], index: int = None) -> None:
         if isinstance(cards, Card):
             cards = [cards]
         if index is None:
@@ -258,7 +259,7 @@ class Sheet(object):
 
         # TODO: Implement two sided
         # TODO: Add title to PDF document
-        c = canvas.Canvas(path, pagesize=tuple(self.size))
+        c = canvas.Canvas(str(path), pagesize=tuple(self.size))
         for page in range(1, self.pages + 1):
             # Front
             for i, card in enumerate(self.page_cards(page)):

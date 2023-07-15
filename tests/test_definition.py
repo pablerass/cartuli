@@ -64,6 +64,6 @@ def test_definition(random_image):
     assert len(definition.decks[0]) == 5
     assert definition.decks[0].two_sided
     assert definition.decks[0].cards[0].front.bleed == 2*mm
-    assert definition.sheets[0].cards == definition.decks[0].cards
-    assert definition.sheets[0].size == A4
-    assert definition.sheets[0].print_margin == 3*mm
+    assert definition.sheets['cards',].cards == definition.decks[0].cards
+    assert definition.sheets['cards',].size == A4
+    assert definition.sheets['cards',].print_margin == 3*mm

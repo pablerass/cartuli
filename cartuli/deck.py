@@ -1,5 +1,7 @@
 """Deck module."""
+from itertools import groupby
 from pathlib import Path
+from typing import Iterable
 
 from .card import Card, CardImage
 from .measure import Size
@@ -7,7 +9,7 @@ from .measure import Size
 
 class Deck:
     # TUNE: Use dataclasses
-    def __init__(self, cards: list[Card] = None, /, name: str = '',
+    def __init__(self, cards: Card | Iterable[Card] = None, /, name: str = '',
                  default_back: Path | str | CardImage = None, size: Size = None):
         if isinstance(default_back, Path) or isinstance(default_back, str):
             if size is None:
@@ -53,6 +55,7 @@ class Deck:
         return self.__cards[0].two_sided
 
     def __add_card(self, card: Card, index: int = None):
+        # TODO: Name cards if they are not already named
         if self.__size is None:
             self.__size = card.size
 
@@ -71,7 +74,7 @@ class Deck:
         else:
             self.__cards.insert(card)
 
-    def add(self, cards: Card | list[Card], index: int = None):
+    def add(self, cards: Card | Iterable[Card], index: int = None):
         if isinstance(cards, Card):
             cards = [cards]
         if index is None:

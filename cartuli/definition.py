@@ -6,6 +6,7 @@ import yaml
 
 from copy import deepcopy
 from glob import glob
+from itertools import chain, groupby
 from pathlib import Path
 
 from .card import Card, CardImage
@@ -45,7 +46,7 @@ class Definition:
         return values
 
     @property
-    def decks(self) -> tuple[Deck]:
+    def decks(self) -> list[Deck]:
         # TUNE: Remove front_card concept and let it in cards
         logger = logging.getLogger('cartuli.definition.Definition.decks')
         if self.__decks is None:
@@ -75,26 +76,32 @@ class Definition:
         return self.__decks
 
     @property
-    def sheets(self) -> tuple[Sheet]:
+    def sheets(self) -> dict[tuple[str], Sheet]:
         # TODO: Replace sheets with generic outputs
         # TODO: Add deck filters to output definition
         if self.__sheets is None:
+            self.__sheets = {}
             if 'sheet' in self.__values['outputs']:
                 sheet_definition = self.__values['outputs']['sheet']
-                self.__sheets = [
-                    Sheet(
-                        deck.cards,
+                if sheet_definition.get('share', True):
+                    group_function = lambda x: x.size
+                else:
+                    group_function = lambda x: x.name
+                groups = groupby(sorted(self.decks, key=group_function), key=group_function)
+                for _, decks in groups:
+                    decks = tuple(decks)  # itertools.groypby object can only be readed once
+                    deck_names = tuple(deck.name for deck in decks)
+                    cards = chain.from_iterable(deck.cards for deck in decks)
+                    self.__sheets[deck_names] = Sheet(
+                        cards,
                         size=Size.from_str(sheet_definition.get('size', str(Sheet.DEFAULT_SIZE))),
                         margin=from_string(sheet_definition.get('margin', str(Sheet.DEFAULT_MARGIN))),
                         padding=from_string(sheet_definition.get('padding', str(Sheet.DEFAULT_PADDING))),
                         crop_marks_padding=from_string(
-                            sheet_definition.get('crop_marks_padding',
-                                                 str(Sheet.DEFAULT_CROP_MARKS_PADDING))),
-                        print_margin=from_string(sheet_definition.get('print_margin', str(Sheet.DEFAULT_PRINT_MARGIN)))
-                    ) for deck in self.decks
-                ]
-            else:
-                self.__sheets = []
+                            sheet_definition.get('crop_marks_padding', str(Sheet.DEFAULT_CROP_MARKS_PADDING))),
+                        print_margin=from_string(sheet_definition.get('print_margin',
+                                                                      str(Sheet.DEFAULT_PRINT_MARGIN)))
+                    )
 
         return self.__sheets
 

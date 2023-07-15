@@ -45,9 +45,11 @@ def main(args=None):
     os.chdir(definition_dir)
 
     definition = Definition.from_file(args.definition_file)
-    for sheet in definition.sheets:
-        sheet_file = f"{sheet.deck.name}.pdf"
-        logger.debug(f'Creating sheet {sheet_file}')
+    sheet_dir = definition_dir / 'sheets'
+    for deck_names, sheet in definition.sheets.items():
+        sheet_dir.mkdir(exist_ok = True)
+        sheet_file = sheet_dir / f"{'_'.join(deck_names)}.pdf"
+        logger.info(f'Creating sheet {sheet_file}')
         sheet.create_pdf(sheet_file)
     # TODO: Add filters to definition
     # filters = CardImageMultipleFilter(
