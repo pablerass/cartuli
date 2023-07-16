@@ -25,7 +25,7 @@ setup(
     license='LGPLv3',
     entry_points={
         'console_scripts': [
-            'carturli=cartuli.__main__:main',
+            'cartuli=cartuli.__main__:main',
         ],
     },
     packages=['cartuli'],
