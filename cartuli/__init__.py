@@ -8,7 +8,7 @@ from .deck import Deck
 from .sheet import Sheet
 
 
-__version__ = "v0.0.0a0"
+__version__ = "v0.0.0a1"
 
 
 __all__ = [
