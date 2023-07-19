@@ -15,9 +15,8 @@ def parse_args(args: list[str] = None) -> argparse.Namespace:
         args = sys.argv[1:]
 
     parser = argparse.ArgumentParser(description='Create a PDF with a list of images')
-    parser.add_argument('-f', '--cartulifile', type=Path, dest='definition_file',
-                        default=Path(__file__).absolute().parent / Definition.DEFAULT_CARTULIFILE,
-                        help='Cartulifile to be used')
+    parser.add_argument('definition_file', type=Path, default=Definition.DEFAULT_CARTULIFILE,
+                        nargs='?', help='Cartulifile to be used')
     parser.add_argument('-v', '--verbose', action='count', default=0,
                         help="Display verbose output")
     return parser.parse_args(args)
@@ -28,13 +27,13 @@ def main(args=None):
     args = parse_args()
 
     # Logging
-    if args.verbose < 2:
+    if args.verbose < 3:
         logging_format = '%(levelname)s - %(message)s'
     else:
         logging_format = '[%(asctime)s] %(levelname)s - %(name)s - %(message)s'
     logging.basicConfig(stream=sys.stderr, format=logging_format,
                         level=logging.WARN - args.verbose * 10)
-    if args.verbose < 3:
+    if args.verbose < 4:
         logging.getLogger('PIL').propagate = False
     logger = logging.getLogger('cartuli')
 
