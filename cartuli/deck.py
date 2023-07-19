@@ -85,3 +85,8 @@ class Deck:
 
     def __len__(self):
         return len(self.__cards)
+
+    def __str__(self) -> str:
+        if self.name:
+            return self.name
+        return super().__str__()

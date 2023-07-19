@@ -267,7 +267,7 @@ class Sheet(object):
                 card_image = card.front.image
                 card_coordinates = self.card_coordinates(num_card)
                 card_position = self.card_position(card_coordinates)
-                logger.debug(f"Adding {num_card} card {card.front} to page {page} at {card_coordinates} position")
+                logger.debug(f"Adding {num_card} card {card} front image to page {page} at {card_coordinates}")
                 c.drawImage(ImageReader(card_image),
                             card_position.x - card.front.bleed, card_position.y - card.front.bleed,
                             card.front.image_size.width, card.front.image_size.height)
@@ -280,7 +280,7 @@ class Sheet(object):
                     card_image = card.back.image
                     card_coordinates = self.card_coordinates(num_card, back=True)
                     card_position = self.card_position(card_coordinates)
-                    logger.debug(f"Adding {num_card} card {card.front} to page {page} at {card_coordinates} position")
+                    logger.debug(f"Adding {num_card} card {card} back image to page {page} at {card_coordinates}")
                     c.drawImage(ImageReader(card_image),
                                 card_position.x - card.front.bleed, card_position.y - card.front.bleed,
                                 card.front.image_size.width, card.front.image_size.height)
@@ -290,6 +290,7 @@ class Sheet(object):
                 c.line(*list(line))
 
             c.showPage()
+            logger.debug(f"Created {path} page {page}")
 
         c.save()
-        logger.debug(f"Created {page}")
+        logger.info(f"Created {path}")

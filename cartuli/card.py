@@ -65,7 +65,7 @@ class Card:
     """One or two sided card representation."""
 
     def __init__(self, front: Path | str | CardImage, back: Path | str | CardImage = None, /,
-                 size: Size = None, name: str = None):
+                 size: Size = None, name: str = ''):
 
         if isinstance(front, Path) or isinstance(front, str):
             if size is None:
@@ -132,3 +132,8 @@ class Card:
                 self.back == self.back and
                 self.size == self.size and
                 self.name == self.name)
+
+    def __str__(self) -> str:
+        if self.name:
+            return self.name
+        return super().__str__()
