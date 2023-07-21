@@ -46,3 +46,7 @@ def inpaint(image: Image.Image, inpaint_size: Size | float | int, image_crop: Si
         cv.cvtColor(np.array(expanded_image), cv.COLOR_RGB2BGR), np.array(mask_image), 15, cv.INPAINT_NS)
 
     return Image.fromarray(cv.cvtColor(inpaint_image_cv, cv.COLOR_BGR2RGB))
+
+
+def straighten(image: Image.Image) -> Image.Image:
+    return Image.Image.copy()

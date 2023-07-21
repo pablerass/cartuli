@@ -3,25 +3,25 @@ from dataclasses import dataclass
 
 from .card import CardImage
 from .measure import mm
-from .processing import inpaint
+from .processing import inpaint, straighten
 
 
-class CardImageFilter(ABC):
+class Filter(ABC):
     @abstractmethod
     def apply(self, card_image: CardImage) -> CardImage:
         pass
 
 
-class CardImageNullFilter(CardImageFilter):
+class NullFilter(Filter):
     def apply(self, card_image: CardImage) -> CardImage:
         return CardImage(card_image.image, card_image.size, card_image.bleed)
 
 
-class CardImageMultipleFilter(CardImageFilter):
-    def __init__(self, *filters: CardImageFilter):
+class MultipleFilter(Filter):
+    def __init__(self, *filters: Filter):
         self.__filters = filters
 
-    def apply(self, card_image) -> CardImage:
+    def apply(self, card_image: CardImage) -> CardImage:
         for f in self.__filters:
             card_image = f.apply(card_image)
 
@@ -29,7 +29,7 @@ class CardImageMultipleFilter(CardImageFilter):
 
 
 @dataclass(frozen=True)
-class CardImageInpaintFilter(CardImageFilter):
+class InpaintFilter(Filter):
     inpaint_size: float = 4*mm
     image_crop: float = 0.4*mm
     corner_radius: float = 3*mm
@@ -42,4 +42,14 @@ class CardImageInpaintFilter(CardImageFilter):
                     card_image.resolution * (self.corner_radius + self.image_crop)),
             card_image.size,
             card_image.bleed + self.inpaint_size
+        )
+
+
+@dataclass(frozen=True)
+class StaightenFilter(Filter):
+    def apply(self, card_image: CardImage) -> CardImage:
+        return CardImage(
+            straighten(card_image.image),
+            card_image.size,
+            card_image.bleed
         )

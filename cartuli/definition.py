@@ -54,21 +54,21 @@ class Definition:
             for name, deck_definition in self.__values['decks'].items():
                 logger.debug(f'Deck {name} definition {deck_definition}')
                 size = Size.from_str(deck_definition['size'])
-                front_cards = []
+                front_images = []
                 if 'front' in deck_definition:
-                    front_cards = [
-                        Card(CardImage(
+                    front_images = [
+                        CardImage(
                             path, size=size,
-                            bleed=from_string(deck_definition['front'].get('bleed', str(CardImage.DEFAULT_BLEED))))
+                            bleed=from_string(deck_definition['front'].get('bleed', str(CardImage.DEFAULT_BLEED)))
                         ) for path in glob(deck_definition['front']['images'])
                     ]
-                    logger.debug(f"Found {len(front_cards)} front cards for '{name}' deck")
+                    logger.debug(f"Found {len(front_images)} front images for '{name}' deck")
                 back_image = None
                 if 'back' in deck_definition:
                     back_image = CardImage(deck_definition['back']['image'], size=size,
                                            bleed=from_string(deck_definition['back'].get(
                                             'bleed', str(CardImage.DEFAULT_BLEED))))
-                deck = Deck(front_cards, default_back=back_image, size=size, name=name)
+                deck = Deck((Card(image) for image in front_images), default_back=back_image, size=size, name=name)
                 self.__decks.append(deck)
             if not self.__decks:
                 logger.warning('No decks loaded in definition')
