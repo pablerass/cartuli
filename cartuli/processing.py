@@ -49,4 +49,17 @@ def inpaint(image: Image.Image, inpaint_size: Size | float | int, image_crop: Si
 
 
 def straighten(image: Image.Image) -> Image.Image:
-    return Image.Image.copy()
+    # Convert image to grayscale for line detection
+    image_array = np.array(Image.Image)
+    gray_image = cv.cvtColor(image_array, cv.COLOR_RGB2GRAY)
+
+    # Apply Canny edge detection an detect linkes using Hought Line Transform
+    edges = cv.Canny(gray_image, threshold1=50, threshold2=200)
+    lines = cv.HoughLinesP(edges, 1, np.pi/180, threshold=100, minLineLength=100, maxLineGap=5)
+
+    # Calculate the average angle of the detected lines and rotate image
+    angles = [np.arctan2(line[0][3] - line[0][1], line[0][2] - line[0][0]) for line in lines]
+    angle_degrees = np.degrees(np.mean(angles))
+    rotated_image = image.copy().rotate(angle_degrees, expand=True)
+
+    return rotated_image
