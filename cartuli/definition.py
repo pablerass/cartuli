@@ -4,14 +4,15 @@ from __future__ import annotations
 import logging
 import yaml
 
-from copy import deepcopy
+from collections import defaultdict
 from glob import glob
 from itertools import chain, groupby
 from pathlib import Path
 
 from .card import Card, CardImage
 from .deck import Deck
-from .measure import Size, from_string
+from .filters import Filter, NullFilter, from_dict as filter_from_dict
+from .measure import Size, from_str
 from .sheet import Sheet
 
 
@@ -24,6 +25,10 @@ class Definition:
         self.__values = Definition._validate(values)
         self.__decks = None
         self.__sheets = None
+
+    @property
+    def _values(self) -> dict:
+        return self.__values
 
     @classmethod
     def from_file(cls, path: Path | str = 'Cartulifile.yml') -> Definition:
@@ -51,23 +56,33 @@ class Definition:
         logger = logging.getLogger('cartuli.definition.Definition.decks')
         if self.__decks is None:
             self.__decks = []
-            for name, deck_definition in self.__values['decks'].items():
+            for name, deck_definition in self.__values.get('decks', {}).items():
                 logger.debug(f'Deck {name} definition {deck_definition}')
                 size = Size.from_str(deck_definition['size'])
                 front_images = []
                 if 'front' in deck_definition:
+                    front_filter = deck_definition['front'].get('filter', '')
                     front_images = [
-                        CardImage(
-                            path, size=size,
-                            bleed=from_string(deck_definition['front'].get('bleed', str(CardImage.DEFAULT_BLEED)))
+                        self.filters[front_filter].apply(
+                            CardImage(
+                                path, size=size,
+                                bleed=from_str(deck_definition['front'].get('bleed', str(CardImage.DEFAULT_BLEED))),
+                                name=Path(path).stem
+                            )
                         ) for path in glob(deck_definition['front']['images'])
                     ]
                     logger.debug(f"Found {len(front_images)} front images for '{name}' deck")
                 back_image = None
                 if 'back' in deck_definition:
-                    back_image = CardImage(deck_definition['back']['image'], size=size,
-                                           bleed=from_string(deck_definition['back'].get(
-                                            'bleed', str(CardImage.DEFAULT_BLEED))))
+                    back_filter = deck_definition['back'].get('filter', '')
+                    back_image = self.filters[back_filter].apply(
+                        CardImage(
+                            deck_definition['back']['image'],
+                            size=size,
+                            bleed=from_str(deck_definition['back'].get('bleed', str(CardImage.DEFAULT_BLEED))),
+                            name=Path(deck_definition['back']['image']).stem
+                        )
+                    )
                 deck = Deck((Card(image) for image in front_images), default_back=back_image, size=size, name=name)
                 self.__decks.append(deck)
             if not self.__decks:
@@ -95,16 +110,21 @@ class Definition:
                     self.__sheets[deck_names] = Sheet(
                         cards,
                         size=Size.from_str(sheet_definition.get('size', str(Sheet.DEFAULT_SIZE))),
-                        margin=from_string(sheet_definition.get('margin', str(Sheet.DEFAULT_MARGIN))),
-                        padding=from_string(sheet_definition.get('padding', str(Sheet.DEFAULT_PADDING))),
-                        crop_marks_padding=from_string(
+                        margin=from_str(sheet_definition.get('margin', str(Sheet.DEFAULT_MARGIN))),
+                        padding=from_str(sheet_definition.get('padding', str(Sheet.DEFAULT_PADDING))),
+                        crop_marks_padding=from_str(
                             sheet_definition.get('crop_marks_padding', str(Sheet.DEFAULT_CROP_MARKS_PADDING))),
-                        print_margin=from_string(sheet_definition.get('print_margin',
-                                                                      str(Sheet.DEFAULT_PRINT_MARGIN)))
+                        print_margin=from_str(sheet_definition.get('print_margin',
+                                                                   str(Sheet.DEFAULT_PRINT_MARGIN)))
                     )
 
         return self.__sheets
 
     @property
-    def _values(self) -> dict:
-        return deepcopy(self.__values)
+    def filters(self) -> dict[str, Filter]:
+        filters = defaultdict(NullFilter)
+
+        for name, filter_definition in self._values.get('filters', {}).items():
+            filters[name] = filter_from_dict(filter_definition)
+
+        return filters

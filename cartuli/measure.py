@@ -22,8 +22,10 @@ __all__ = [
 isclose = partial(isclose, rel_tol=1e-04)
 
 
-def from_string(measure: str) -> float:
-    return eval(measure)
+def from_str(measure: str | int | float) -> float:
+    if isinstance(measure, str):
+        return eval(measure)
+    return measure
 
 
 @dataclass(frozen=True, order=True)

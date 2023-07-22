@@ -11,8 +11,7 @@ class CardImage:
 
     DEFAULT_BLEED = 0.0
 
-    # TUNE: Size is duplicated between image and card
-    def __init__(self, image: Path | str | Image.Image, /, size: Size, bleed: float = DEFAULT_BLEED):
+    def __init__(self, image: Path | str | Image.Image, /, size: Size, bleed: float = DEFAULT_BLEED, name: str = ''):
         self.__image_path = None
         self.__image = None
         self.__resolution = None
@@ -30,8 +29,17 @@ class CardImage:
         self.__size = size
         self.__bleed = bleed
 
+        # TUNE: This can be inferred from path but it will broke tests
+        # if not name and self.__image_path is not None:
+        #     name = self.__image_path.stem
+        self.__name = name
+
     @property
     def image(self) -> Image.Image:
+        return self.__image
+
+    @property
+    def image_path(self) -> Path | None:
         return self.__image
 
     @property
@@ -55,10 +63,25 @@ class CardImage:
     def image_size(self) -> Size:
         return Size(self.size.width + 2*self.bleed, self.size.height + 2*self.bleed)
 
+    @property
+    def name(self) -> str | None:
+        return self.__name
+
+    @name.setter
+    def name(self, name: str):
+        if self.__name:
+            raise AttributeError("can't set attribute 'name' if already set")
+        self.__name = name
+
     def __eq__(self, other) -> bool:
         return (self.image == other.image and
                 self.size == self.size and
                 self.bleed == self.bleed)
+
+    def __str__(self) -> str:
+        if self.name:
+            return self.name
+        return super().__str__()
 
 
 class Card:
@@ -91,6 +114,8 @@ class Card:
         self.__size = size
         self.__front = front
         self.__back = back
+
+        self.__update_card_image_names(name)
         self.__name = name
 
     @property
@@ -119,9 +144,25 @@ class Card:
             raise TypeError(f"{type(back)} is not a valid image")
         self.__back = back
 
+    def __update_card_image_names(self, name: str):
+        if not name:
+            return
+        if not self.front.name:
+            self.front.name = f'{name}_front'
+        if self.back:
+            if not self.back.name:
+                self.back.name = f'{name}_back'
+
     @property
     def name(self) -> str:
         return self.__name
+
+    @name.setter
+    def name(self, name: str):
+        if self.__name:
+            raise AttributeError("can't set attribute 'name' if already set")
+        self.__update_card_image_names(name)
+        self.__name = name
 
     @property
     def two_sided(self) -> bool:
