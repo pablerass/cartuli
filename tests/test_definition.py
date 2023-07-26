@@ -1,6 +1,7 @@
 import pytest
 
 from cartuli.definition import Definition
+from cartuli.filters import NullFilter, InpaintFilter
 from cartuli.measure import Size, STANDARD, A4, mm
 
 
@@ -12,12 +13,28 @@ def test_defintion_invalid_file():
 
 
 def test_file(fixture_file):
-    pass
-    # assert Definition.from_file(fixture_file("simple-cartulifile.yml")).values == {}
+    assert Definition.from_file(fixture_file("simple-cartulifile.yml"))._values == {
+        'decks': {
+            'cards': {
+                'size': 'STANDARD',
+                'front': {
+                    'images': "cards/*.png"
+                },
+                'back': {
+                    'image': "card-back.png"
+                }
+            }
+        },
+        'outputs': {
+            'sheet': {
+                'size': "A4",
+            }
+        }
+    }
 
 
-def test_empty_definition():
-    empty_definition = {
+def test_decks_definition():
+    definition_dict = {
         'decks': {
             'cards': {
                 'size': 'STANDARD'
@@ -27,18 +44,31 @@ def test_empty_definition():
             }
         }
     }
-    definition = Definition(empty_definition)
+    definition = Definition(definition_dict)
     assert definition.decks[0].name == 'cards'
     assert definition.decks[1].name == 'tokens'
     assert definition.decks[0].size == STANDARD
     assert definition.decks[1].size == Size(44*mm, 75*mm)
 
 
+def test_filters_definition():
+    definition_dict = {
+        'filters': {
+            'front': {
+                'inpaint': {}
+            }
+        }
+    }
+    definition = Definition(definition_dict)
+    assert definition.filters['front'] == InpaintFilter()
+    assert definition.filters['back'] == NullFilter()
+
+
 def test_definition(random_image):
     random_image_dir = random_image("front").parent
     for _ in range(0, 4):
         random_image("front")
-    simple_definition = {
+    definition_dict = {
         'decks': {
             'cards': {
                 'size': 'STANDARD',
@@ -58,7 +88,8 @@ def test_definition(random_image):
             }
         }
     }
-    definition = Definition(simple_definition)
+
+    definition = Definition(definition_dict)
     assert definition.decks[0].name == 'cards'
     assert definition.decks[0].size == STANDARD
     assert len(definition.decks[0]) == 5

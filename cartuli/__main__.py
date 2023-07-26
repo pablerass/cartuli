@@ -52,11 +52,6 @@ def main(args=None):
         sheet_file = sheet_dir / f"{'_'.join(deck_names)}.pdf"
         logger.debug(f'Creating sheet {sheet_file}')
         sheet.create_pdf(sheet_file)
-    # TODO: Add filters to definition
-    # filters = CardImageMultipleFilter(
-    #    CardImageInpaintFilter()
-    #    CardImageNullFilter()
-    # )
 
     return 0
 

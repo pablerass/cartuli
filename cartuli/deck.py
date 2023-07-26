@@ -22,15 +22,31 @@ class Deck:
         self.__default_back = default_back
         self.__size = size
 
+        self.__name = name
+
         self.__cards = []
         if cards is not None:
             self.add(cards)
 
-        self.__name = name
+    def __update_card_image_names(self, name: str):
+        if not name:
+            return
+        for num, card in enumerate(self.cards):
+            if not card.name:
+                card.name = f'{name}_{num}'
 
     @property
     def name(self) -> str:
         return self.__name
+
+    @name.setter
+    def name(self, name: str):
+        if not name or name is None:
+            return
+        if self.__name:
+            raise AttributeError("can't set attribute 'name' if already set")
+        self.__update_card_image_names(name)
+        self.__name = name
 
     @property
     def size(self) -> Size:
@@ -53,7 +69,7 @@ class Deck:
             raise AttributeError("Deck is empty, is not yet one sided or two sided ")
         return self.__cards[0].two_sided
 
-    def __add_card(self, card: Card, index: int = None):
+    def __add_card(self, card: Card):
         # TODO: Name cards if they are not already named
         if self.__size is None:
             self.__size = card.size
@@ -62,26 +78,19 @@ class Deck:
             raise ValueError(f"Card size {card.size} distinct from deck {self.size} card size")
 
         if self.default_back is not None:
-            try:
+            if not card.back:
                 card.back = self.default_back
-            except AttributeError:
-                # Back image is already set
-                pass
 
-        if index is None:
-            self.__cards.append(card)
-        else:
-            self.__cards.insert(card)
+        if self.__name and not card.name:
+            card.name = f'{self.name}_{len(self)+1}'
 
-    def add(self, cards: Card | Iterable[Card], index: int = None):
+        self.__cards.append(card)
+
+    def add(self, cards: Card | Iterable[Card]):
         if isinstance(cards, Card):
             cards = [cards]
-        if index is None:
-            for card in cards:
-                self.__add_card(card)
-        else:
-            for n, card in enumerate(cards):
-                self.__add_card(card, index + n)
+        for card in cards:
+            self.__add_card(card)
 
     def __len__(self):
         return len(self.__cards)
