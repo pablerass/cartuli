@@ -41,6 +41,7 @@ def main(args=None):
     definition_dir = Path(args.definition_file)
     if not definition_dir.is_dir():
         definition_dir = definition_dir.parent
+    # TODO: Find a better way to manage definition relative paths
     os.chdir(definition_dir)
 
     definition = Definition.from_file(args.definition_file)

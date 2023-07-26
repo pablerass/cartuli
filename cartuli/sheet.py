@@ -282,8 +282,8 @@ class Sheet(object):
                     card_position = self.card_position(card_coordinates)
                     logger.debug(f"Adding {num_card} card {card} back image to page {page} at {card_coordinates}")
                     c.drawImage(ImageReader(card_image),
-                                card_position.x - card.front.bleed, card_position.y - card.front.bleed,
-                                card.front.image_size.width, card.front.image_size.height)
+                                card_position.x - card.back.bleed, card_position.y - card.back.bleed,
+                                card.back.image_size.width, card.back.image_size.height)
 
             for line in self.crop_marks:
                 c.setLineWidth(0.5)
