@@ -23,7 +23,7 @@ def test_filter_from_dict():
         'inpaint': {
             'image_crop': 2*mm
         },
-        'straighten': {}
+        'straighten': None
     }) == MultipleFilter(
         InpaintFilter(image_crop=2*mm),
         StraightenFilter()

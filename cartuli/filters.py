@@ -53,7 +53,7 @@ class InpaintFilter(Filter):
                 image_crop=card_image.resolution * self.image_crop,
                 corner_radius=card_image.resolution * self.corner_radius,
                 inpaint_radius=max(card_image.resolution) * self.inpaint_radius,
-                # debug_dir=Path(f'.debug/filters/inpaint/{card_image}')
+                # debug_dir=f'.debug/filters/inpaint/{card_image}'
             ),
             size=card_image.size,
             bleed=card_image.bleed + self.inpaint_size,
@@ -70,7 +70,7 @@ class StraightenFilter(Filter):
         return CardImage(
             straighten(
                 card_image.image,
-                # debug_dir=Path(f'.debug/{datetime.now().strftime("%Y%m%d-%H%M%S)}/filters/inpaint/{card_image}')),
+                debug_dir=f'.debug/filters/straighten/{card_image}'
             ),
             size=card_image.size,
             bleed=card_image.bleed,
@@ -90,7 +90,10 @@ def from_dict(filter_dict: dict) -> Filter:
     elif len(filter_dict) == 1:
         filter_name = list(filter_dict)[0]
         filter_class = globals()[snake_to_class(filter_name) + 'Filter']
-        return filter_class(**{k: from_str(v) for k, v in filter_dict[filter_name].items()})
+        filter_args = {}
+        if filter_dict[filter_name] is not None:
+            filter_args = {k: from_str(v) for k, v in filter_dict[filter_name].items()}
+        return filter_class(**filter_args)
     else:
         return MultipleFilter(
             *(from_dict({i[0]: i[1]}) for i in filter_dict.items())
