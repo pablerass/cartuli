@@ -21,17 +21,22 @@ class Definition:
 
     DEFAULT_CARTULIFILE = 'Cartulifile.yml'
 
-    def __init__(self, values: dict):
+    def __init__(self, values: dict, /,
+                 deck_names: list[str] = None, num_cards: int = None):
         self.__values = Definition._validate(values)
         self.__decks = None
         self.__sheets = None
+
+        self.__deck_names = deck_names
+        self.__num_cards = num_cards
 
     @property
     def _values(self) -> dict:
         return self.__values
 
     @classmethod
-    def from_file(cls, path: Path | str = 'Cartulifile.yml') -> Definition:
+    def from_file(cls, path: Path | str = 'Cartulifile.yml', /,
+                  deck_names: list[str] = None, num_cards: int = None) -> Definition:
         if isinstance(path, str):
             path = Path(path)
         if not isinstance(path, Path):
@@ -41,7 +46,7 @@ class Definition:
             path = path / cls.DEFAULT_CARTULIFILE
 
         with path.open(mode='r') as file:
-            return cls(yaml.safe_load(file))
+            return cls(yaml.safe_load(file), deck_names, num_cards)
 
     def _validate(values: dict) -> dict:
         # TODO: Implement validation
@@ -57,11 +62,19 @@ class Definition:
         if self.__decks is None:
             self.__decks = []
             for name, deck_definition in self.__values.get('decks', {}).items():
-                logger.debug(f'Deck {name} definition {deck_definition}')
+                if self.__deck_names and name not in self.__deck_names:
+                    logger.info(f"'{name}' in {self.__deck_names}, deck skipped")
+                    break
+                logger.debug(f"Deck '{name}' definition {deck_definition}")
                 size = Size.from_str(deck_definition['size'])
                 front_images = []
                 if 'front' in deck_definition:
                     front_filter = deck_definition['front'].get('filter', '')
+                    front_image_files = glob(deck_definition['front']['images'])
+                    if self.__num_cards is not None:
+                        logger.debug(f"Filtered to {self.__num_cards} from {len(front_image_files)} "
+                                     f"found for '{name}' deck")
+                        front_image_files = front_image_files[:self.__num_cards]
                     front_images = [
                         self.filters[front_filter].apply(
                             CardImage(
@@ -69,9 +82,9 @@ class Definition:
                                 bleed=from_str(deck_definition['front'].get('bleed', str(CardImage.DEFAULT_BLEED))),
                                 name=Path(path).stem
                             )
-                        ) for path in glob(deck_definition['front']['images'])
+                        ) for path in front_image_files
                     ]
-                    logger.debug(f"Found {len(front_images)} front images for '{name}' deck")
+                    logger.info(f"Obtained {len(front_images)} front images for '{name}' deck")
                 back_image = None
                 if 'back' in deck_definition:
                     back_filter = deck_definition['back'].get('filter', '')

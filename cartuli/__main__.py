@@ -17,6 +17,10 @@ def parse_args(args: list[str] = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description='Create a PDF with a list of images')
     parser.add_argument('definition_file', type=Path, default=Definition.DEFAULT_CARTULIFILE,
                         nargs='?', help='Cartulifile to be used')
+    parser.add_argument('-d', '--decks', type=str, nargs='*',
+                        help="Decks to include cards from. Add all decks if none is specified")
+    parser.add_argument('-n', '--num-cards', type=int,
+                        help="Limit the number of cards to be added from each deck")
     parser.add_argument('-v', '--verbose', action='count', default=0,
                         help="Display verbose output")
     return parser.parse_args(args)
@@ -44,8 +48,8 @@ def main(args=None):
     # TODO: Find a better way to manage definition relative paths
     os.chdir(definition_dir)
 
-    definition = Definition.from_file(args.definition_file)
-    logger.debug(f"Loaded {args.definition_file} with {len(definition.decks)} decks")
+    definition = Definition.from_file(args.definition_file, deck_names=args.decks, num_cards=args.num_cards)
+    logger.info(f"Loaded {args.definition_file} with {len(definition.decks)} decks")
     sheet_dir = definition_dir / 'sheets'
     for deck_names, sheet in definition.sheets.items():
         sheet_dir.mkdir(exist_ok=True)
