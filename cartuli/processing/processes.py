@@ -1,13 +1,11 @@
 import cv2 as cv
-import inspect
 import numpy as np
-import re
 
-from datetime import datetime
 from pathlib import Path
 from PIL import Image, ImageOps, ImageDraw
 
-from .measure import Size
+from ..measure import Size
+from .tracing import _persist
 
 
 def _to_size(value: Size | float | int) -> Size:
@@ -19,27 +17,6 @@ def _to_size(value: Size | float | int) -> Size:
         value = Size(round(value.width), round(value.height))
 
     return value
-
-
-PERSIST_REGEX = re.compile(r"^\s*_persist\((?P<name>\w+)\s*,.*$")
-
-
-def _persist(image: Image.Image | np.ndarray, dir_path: Path | str = None) -> None:
-    # TUNE: Make this use logging levels to manage debug images creation
-    # TUNE: This coluld be part of an image processing logging class
-    if dir_path is not None:
-        calling_line = inspect.getframeinfo(inspect.currentframe().f_back).code_context[0]
-        name = PERSIST_REGEX.match(calling_line)['name']
-        if isinstance(dir_path, str):
-            dir_path = Path(dir_path)
-        dir_path.mkdir(parents=True, exist_ok=True)
-        image_path = dir_path / f'{datetime.now().strftime("%Y%M%d%H%M%s")}-{name}.png'
-        if isinstance(image, Image.Image):
-            image.save(image_path)
-        elif isinstance(image, np.ndarray):
-            cv.imwrite(str(image_path), image)
-        else:
-            raise AttributeError(f'Invalid image type {type(image)}')
 
 
 def inpaint(image: Image.Image, /, inpaint_size: Size | float | int, image_crop: Size | float | int = 0,
