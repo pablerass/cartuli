@@ -3,6 +3,7 @@ import inspect
 import numpy as np
 import re
 
+from collections import defaultdict
 from datetime import datetime
 from logging import Handler, LogRecord, NOTSET
 from pathlib import Path
@@ -52,10 +53,16 @@ class Trace:
 class Tracer:
     def __init__(self):
         self.__traces = []
+        self.__last_stream = defaultdict(int)
+        self.__streams = defaultdict(list)
 
     @property
     def traces(self) -> tuple[dict]:
         return tuple(self.__traces)
+
+    @property
+    def streams(self) -> dict[int, tuple[dict]]:
+        return {k: tuple(v) for k, v in self.__streams.items()}
 
     def record(self, image: Image.Image | np.ndarray, /, timestamp: datetime = None,
                function_name: str = None, file_name: str = None, line_number: int = None) -> None:
@@ -68,12 +75,20 @@ class Tracer:
             file_name = calling_frame_info.filename
             line_number = calling_frame_info.lineno
 
-        self.__traces.append(
-            Trace(image,
-                  timestamp,
-                  function_name=function_name,
-                  file_name=file_name,
-                  line_number=line_number))
+        trace = Trace(
+            image,
+            timestamp,
+            function_name=function_name,
+            file_name=file_name,
+            line_number=line_number
+        )
+
+        # TODO: This aproach does not work with multiprocessing
+        # TUNE; There must be a more pythonic way of doing this
+        stream_number = self.__last_stream[file_name, line_number] + 1
+        self.__last_stream[file_name, line_number] = stream_number
+        self.__traces.append(trace)
+        self.__streams[stream_number].append(trace)
 
 
 class ImageHandler(Handler):

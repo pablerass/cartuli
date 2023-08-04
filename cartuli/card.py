@@ -16,8 +16,6 @@ class CardImage:
         self.__image = None
         self.__resolution = None
 
-        print(type(image))
-
         if isinstance(image, str):
             image = Path(image)
         if isinstance(image, Path):
