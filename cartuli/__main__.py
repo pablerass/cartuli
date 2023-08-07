@@ -3,6 +3,7 @@
 import argparse
 import logging
 import os
+import re
 import sys
 
 from pathlib import Path
@@ -17,10 +18,8 @@ def parse_args(args: list[str] = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description='Create a PDF with a list of images')
     parser.add_argument('definition_file', type=Path, default=Definition.DEFAULT_CARTULIFILE,
                         nargs='?', help='Cartulifile to be used')
-    parser.add_argument('-d', '--decks', type=str, nargs='*',
-                        help="Decks to include cards from. Add all decks if none is specified")
-    parser.add_argument('-n', '--num-cards', type=int,
-                        help="Limit the number of cards to be added from each deck")
+    parser.add_argument('-c', '--cards', type=str, nargs='*', default=(),
+                        help="Cards to include supporting shell patterns")
     parser.add_argument('-v', '--verbose', action='count', default=0,
                         help="Display verbose output")
     return parser.parse_args(args)
@@ -48,7 +47,12 @@ def main(args=None):
     # TODO: Find a better way to manage definition relative paths
     os.chdir(definition_dir)
 
-    definition = Definition.from_file(args.definition_file, deck_names=args.decks, num_cards=args.num_cards)
+    cards_filter = None
+    if args.cards is not None:
+        cards_regex = re.compile(r'^.*(' + '|'.join(args.cards) + r').*$')
+        cards_filter = lambda x: cards_regex.match(x)
+
+    definition = Definition.from_file(args.definition_file, cards_filter=cards_filter)
     logger.info(f"Loaded {args.definition_file} with {len(definition.decks)} decks")
     sheet_dir = definition_dir / 'sheets'
     for deck_names, sheet in definition.sheets.items():

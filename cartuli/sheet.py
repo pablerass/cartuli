@@ -267,7 +267,7 @@ class Sheet(object):
                 card_image = card.front.image
                 card_coordinates = self.card_coordinates(num_card)
                 card_position = self.card_position(card_coordinates)
-                logger.debug(f"Adding {num_card} card {card} front image to page {page} at {card_coordinates}")
+                logger.debug(f"Adding card {num_card} '{card}' front image to page {page} at {card_coordinates}")
                 c.drawImage(ImageReader(card_image),
                             card_position.x - card.front.bleed, card_position.y - card.front.bleed,
                             card.front.image_size.width, card.front.image_size.height)

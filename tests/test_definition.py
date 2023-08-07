@@ -98,3 +98,8 @@ def test_definition(random_image_file):
     assert definition.sheets['cards', ].cards == definition.decks[0].cards
     assert definition.sheets['cards', ].size == A4
     assert definition.sheets['cards', ].print_margin == 3*mm
+
+
+def test_filters(random_image_file):
+    # TODO: Implement filters testing
+    pass
