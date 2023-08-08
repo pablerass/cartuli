@@ -9,6 +9,7 @@ import sys
 from pathlib import Path
 
 from .definition import Definition
+from .processing import Tracer, ImageHandler
 
 
 def parse_args(args: list[str] = None) -> argparse.Namespace:
@@ -22,12 +23,16 @@ def parse_args(args: list[str] = None) -> argparse.Namespace:
                         help="Cards to include supporting shell patterns")
     parser.add_argument('-v', '--verbose', action='count', default=0,
                         help="Display verbose output")
+    parser.add_argument('-T', '--trace-output', type=Path, default=None,
+                        help="Output traces of image processing")
     return parser.parse_args(args)
 
 
 def main(args=None):
     """Execute main package command line functionality."""
     args = parse_args()
+
+    tracer = Tracer()
 
     # Logging
     if args.verbose < 3:
@@ -36,11 +41,20 @@ def main(args=None):
         logging_format = '[%(asctime)s] %(levelname)s - %(name)s - %(message)s'
     logging.basicConfig(stream=sys.stderr, format=logging_format,
                         level=logging.WARN - args.verbose * 10)
+    logging.getLogger('cartuli.processing').propagate = False
+
     if args.verbose < 4:
         logging.getLogger('PIL').propagate = False
-    logger = logging.getLogger('cartuli')
+
+    if args.trace_output:
+        processing_logger = logging.getLogger('cartuli.processing')
+        processing_logger.setLevel(logging.DEBUG)
+        processing_handler = ImageHandler(tracer)
+        processing_handler.setLevel(logging.DEBUG)
+        processing_logger.addHandler(processing_handler)
 
     # Definition paths are relative to definition file
+    logger = logging.getLogger('cartuli')
     definition_dir = Path(args.definition_file)
     if not definition_dir.is_dir():
         definition_dir = definition_dir.parent
@@ -60,6 +74,8 @@ def main(args=None):
         sheet_file = sheet_dir / f"{'_'.join(deck_names)}.pdf"
         logger.debug(f'Creating sheet {sheet_file}')
         sheet.create_pdf(sheet_file)
+
+    tracer.export(args.trace_output)
 
     return 0
 

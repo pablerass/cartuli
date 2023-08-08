@@ -1,7 +1,8 @@
+import base64
 import cv2 as cv
 import inspect
+import io
 import numpy as np
-import re
 
 from collections import defaultdict
 from datetime import datetime
@@ -10,15 +11,12 @@ from pathlib import Path
 from PIL import Image
 
 
-PERSIST_REGEX = re.compile(r"^\s*_persist\((?P<name>\w+)\s*,.*$")
-
-
 class Trace:
     # TUNE: This could be applied to any type of object
     def __init__(self, image: Image.Image | np.ndarray, timestamp: datetime = None, /,
                  function_name: str = None, file_name: str = None, line_number: int = None):
         if isinstance(image, np.ndarray):
-            image = Image.fromarray(image)
+            image = Image.fromarray(cv.cvtColor(image, cv.COLOR_BGR2RGB))
         self.__image = image.copy()
 
         if timestamp is None:
@@ -90,6 +88,16 @@ class Tracer:
         self.__traces.append(trace)
         self.__streams[stream_number].append(trace)
 
+    def export(self, output_path: Path | str):
+        if output_path is None:
+            return
+
+        with output_path.open('w') as output_file:
+            for trace in self.__traces:
+                image_buffer = io.BytesIO()
+                trace.image.save(image_buffer, format="JPEG")
+                base64_image = base64.b64encode(image_buffer.getvalue())
+                output_file.write(f'<img src="data:image/jpeg;base64,{base64_image.decode("utf-8")}" />\n</br>')
 
 class ImageHandler(Handler):
     def __init__(self, tracer: Tracer, level=NOTSET):
@@ -115,21 +123,3 @@ class ImageHandler(Handler):
                 file_name=record.filename,
                 line_number=record.lineno
             )
-
-
-def _persist(image: Image.Image | np.ndarray, dir_path: Path | str = None) -> None:
-    # TUNE: Make this use logging levels to manage debug images creation
-    # TUNE: This coluld be part of an image processing logging class
-    if dir_path is not None:
-        calling_line = inspect.getframeinfo(inspect.currentframe().f_back).code_context[0]
-        name = PERSIST_REGEX.match(calling_line)['name']
-        if isinstance(dir_path, str):
-            dir_path = Path(dir_path)
-        dir_path.mkdir(parents=True, exist_ok=True)
-        image_path = dir_path / f'{datetime.now().strftime("%Y%M%d%H%M%s")}-{name}.png'
-        if isinstance(image, Image.Image):
-            image.save(image_path)
-        elif isinstance(image, np.ndarray):
-            cv.imwrite(str(image_path), image)
-        else:
-            raise AttributeError(f'Invalid image type {type(image)}')

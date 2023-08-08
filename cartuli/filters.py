@@ -2,7 +2,6 @@ import logging
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-# from pathlib import Path
 
 from .card import CardImage
 from .measure import mm, from_str
@@ -52,8 +51,7 @@ class InpaintFilter(Filter):
                 inpaint_size=card_image.resolution * self.inpaint_size,
                 image_crop=card_image.resolution * self.image_crop,
                 corner_radius=card_image.resolution * self.corner_radius,
-                inpaint_radius=max(card_image.resolution) * self.inpaint_radius,
-                # debug_dir=f'.debug/filters/inpaint/{card_image}'
+                inpaint_radius=max(card_image.resolution) * self.inpaint_radius
             ),
             size=card_image.size,
             bleed=card_image.bleed + self.inpaint_size,
@@ -68,10 +66,7 @@ class StraightenFilter(Filter):
         logger.debug(f'Applying to {card_image}')
 
         return CardImage(
-            straighten(
-                card_image.image,
-                debug_dir=f'.debug/filters/straighten/{card_image}'
-            ),
+            straighten(card_image.image),
             size=card_image.size,
             bleed=card_image.bleed,
             name=card_image.name
