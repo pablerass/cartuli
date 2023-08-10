@@ -1,8 +1,9 @@
+from __future__ import annotations
+
 import base64
 import cv2 as cv
 import inspect
 import io
-# import nbformat as nbf
 import numpy as np
 
 from collections import defaultdict
@@ -14,7 +15,7 @@ from PIL import Image
 
 class Trace:
     # TUNE: This could be applied to any type of object
-    def __init__(self, image: Image.Image | np.ndarray, timestamp: datetime = None, /,
+    def __init__(self, image: Image.Image | np.ndarray, timestamp: datetime = None, previous: Trace = None, /,
                  function_name: str = None, file_name: str = None, line_number: int = None):
         if isinstance(image, np.ndarray):
             image = Image.fromarray(cv.cvtColor(image, cv.COLOR_BGR2RGB))
@@ -27,10 +28,17 @@ class Trace:
         self.__function_name = function_name
         self.__file_name = file_name
         self.__line_number = line_number
+        self.__previous = previous
+
+        self.__code = None
 
     @property
     def image(self) -> Image.Image:
         return self.__image
+
+    @property
+    def previous(self) -> Trace:
+        return self.__previous
 
     @property
     def timestamp(self) -> datetime:
@@ -48,11 +56,37 @@ class Trace:
     def line_number(self) -> int | None:
         return self.__line_number
 
+    @property
+    def code(self) -> str:
+        if self.__code is None:
+            # TUNE: The code can change during execution
+            with Path(self.file_name).open('r') as file:
+                file_code = file.readlines()
+
+            last_line = self.line_number
+            if self.previous is None or self.function_name != self.previous.function_name:
+                # TODO: Add calling function definition
+                first_line = last_line - 1
+            else:
+                first_line = self.previous.line_number
+            trace_code_lines = file_code[first_line:last_line]
+
+            # Code formatting or adjustments
+            if not trace_code_lines[0].strip():
+                del trace_code_lines[0]
+            # FIXME: This does not comment lines propery, it should keep align
+            # trace_code_lines[-1] = f"# {trace_code_lines[-1]}"
+
+            self.__code = ''.join(trace_code_lines)
+
+        return self.__code
+
 
 class Tracer:
     def __init__(self):
         self.__traces = []
         self.__last_stream = defaultdict(int)
+        # TODO: Add function name and initial file to streams
         self.__streams = defaultdict(list)
 
     @property
@@ -74,39 +108,26 @@ class Tracer:
             file_name = calling_frame_info.filename
             line_number = calling_frame_info.lineno
 
-        trace = Trace(
-            image,
-            timestamp,
-            function_name=function_name,
-            file_name=file_name,
-            line_number=line_number
-        )
-
         # TODO: This aproach does not work with multiprocessing
         # TODO: This aproach does not work with loops either
         # TUNE; There must be a more pythonic way of doing this
         stream_number = self.__last_stream[file_name, line_number] + 1
         self.__last_stream[file_name, line_number] = stream_number
+        previous_trace = None
+        if stream_number in self.__streams:
+            previous_trace = self.__streams[stream_number][-1]
+
+        trace = Trace(
+            image,
+            timestamp,
+            previous_trace,
+            function_name=function_name,
+            file_name=file_name,
+            line_number=line_number,
+        )
+
         self.__traces.append(trace)
         self.__streams[stream_number].append(trace)
-
-    def get_trace_code(self, trace) -> str:
-        # TODO: This should be part of the trace itself
-        trace_number = self.__traces.index(trace)
-
-        with Path(trace.file_name).open('r') as file:
-            file_code = file.readlines()
-
-        last_line = trace.line_number
-        if trace_number == 0:
-            # TODO: Set the first line of the function
-            first_line = last_line - 1
-        else:
-            first_line = self.__traces[trace_number-1].line_number
-
-        # TODO: Remove initial and trailing empty lines
-        trace_code = file_code[first_line:last_line]
-        return ''.join(trace_code)
 
     def export(self, output_path: Path | str):
         # TODO: Create output by pipeline instead of for all traces
@@ -122,13 +143,13 @@ class Tracer:
         <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.20.0/prism.min.js"></script>
         <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.17.1/components/prism-python.min.js"></script>
     </head>
-    <body>""")
+    <body>""")  # TUNE: Homogeneize prism version, I have tried it but this code won't work with all 1.29.0
             for trace in self.__traces:
                 image_buffer = io.BytesIO()
                 trace.image.save(image_buffer, format="JPEG")
                 base64_image = base64.b64encode(image_buffer.getvalue())
                 # TODO: Add line numbers in code
-                output_file.write(f'<pre><code class="language-python">{self.get_trace_code(trace)}</code></pre>')
+                output_file.write(f'<pre><code class="language-python">{trace.code}</code></pre>')
                 output_file.write(f'<img src="data:image/jpeg;base64,{base64_image.decode("utf-8")}" />\n<br/>')
             output_file.write("""    </body>
 </html>""")
