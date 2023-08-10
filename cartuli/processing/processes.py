@@ -56,31 +56,37 @@ def inpaint(image: Image.Image, /, inpaint_size: Size | float | int, image_crop:
     return inpainted_image
 
 
+def _get_rotation_angle(line):
+    slope = (line[3] - line[1], line[2] - line[0])
+    angle = np.degrees(np.arctan2(*slope))
+
+    # TUNE: There should be some mathematical something to implement this better
+    if angle > 90.0:
+        angle = angle - 180
+    if angle < -90.0:
+        angle = angle + 180
+    if angle > 45.0:
+        return 90 - angle
+    if angle < -45.0:
+        return -90 - angle
+    return angle
+
+
+def _discard_outliers(data: np.ndarray | list, outlier_constant: float = 0.2) -> np.ndarray:
+    if not isinstance(data, np.ndarray):
+        data = np.array(data)
+    upper_quartile = np.percentile(data, 75)
+    lower_quartile = np.percentile(data, 25)
+    iqr = (upper_quartile - lower_quartile) * outlier_constant
+    quartile_set = (lower_quartile - iqr, upper_quartile + iqr)
+    result_data = []
+    for value in data:
+        if value >= quartile_set[0] and value <= quartile_set[1]:
+            result_data.append(value)
+    return result_data
+
+
 def straighten(image: Image.Image, /) -> Image.Image:
-    # TUNE: This code is a mess, it can be ordered for sure
-    def get_angle(line):
-        # Check if the line is vertical.
-        if line[0] == line[2]:
-            angle = 90
-        else:
-            slope = (line[3] - line[1], line[2] - line[0])
-            angle = np.degrees(np.arctan2(*slope))
-
-        # Check if the line is horizontal
-        if line[1] == line[3]:
-            angle = 0
-
-        return angle
-
-    def is_almost_vertical(angle):
-        return abs(angle - 90) < 20
-
-    def is_almost_horizontal(angle):
-        return abs(angle) < 20
-
-    def vertical_to_rotation(angle):
-        return angle - 90
-
     logger = logging.getLogger('cartuli.processing')
     logger.debug(image)
 
@@ -91,26 +97,26 @@ def straighten(image: Image.Image, /) -> Image.Image:
     logger.debug(edges_image)
     lines = cv.HoughLinesP(edges_image, 1, np.pi/180, threshold=100, minLineLength=100, maxLineGap=100)
 
-    # TUNE: This code is a mess, it can be improved for sure
+    # Discard outliers
+    line_angles = {tuple(line[0]): _get_rotation_angle(line[0]) for line in lines}
+    angles = _discard_outliers(list(line_angles.values()))
+
+    # Generate debug image
     image_lines = image.copy()
     image_lines_draw = ImageDraw.Draw(image_lines)
-    angles = []
     for line in lines:
-        line = line[0]
-        angle = get_angle(line)
-        color = "red"
-        if is_almost_horizontal(angle):
-            color = "green"
-            angles.append(angle)
-        if is_almost_vertical(angle):
-            color = "blue"
-            angles.append(vertical_to_rotation(angle))
-        image_lines_draw.line((tuple(line[0:2]), tuple(line[2:4])), fill=color, width=2)
+        line = tuple(line[0])
+        color = "green"
+        if line_angles[line] not in angles:
+            color = "red"
+        image_lines_draw.line((line[0:2], line[2:4]), fill=color, width=2)
     logger.debug(image_lines)
 
     # Calculate the average angle of the detected lines and rotate image
     rotation_angle = -np.mean(angles)
-    rotated_image = image.rotate(rotation_angle, expand=True)
+    rotated_image = image.rotate(rotation_angle, expand=False)
     logger.debug(rotated_image)
+
+    # TUNE: Maybe new content generated after rotation should be inpainted
 
     return rotated_image
