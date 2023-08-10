@@ -2,6 +2,7 @@ import base64
 import cv2 as cv
 import inspect
 import io
+# import nbformat as nbf
 import numpy as np
 
 from collections import defaultdict
@@ -82,22 +83,89 @@ class Tracer:
         )
 
         # TODO: This aproach does not work with multiprocessing
+        # TODO: This aproach does not work with loops either
         # TUNE; There must be a more pythonic way of doing this
         stream_number = self.__last_stream[file_name, line_number] + 1
         self.__last_stream[file_name, line_number] = stream_number
         self.__traces.append(trace)
         self.__streams[stream_number].append(trace)
 
+    def get_trace_code(self, trace) -> str:
+        # TODO: This should be part of the trace itself
+        trace_number = self.__traces.index(trace)
+
+        with Path(trace.file_name).open('r') as file:
+            file_code = file.readlines()
+
+        last_line = trace.line_number
+        if trace_number == 0:
+            # TODO: Set the first line of the function
+            first_line = last_line - 1
+        else:
+            first_line = self.__traces[trace_number-1].line_number
+
+        # TODO: Remove initial and trailing empty lines
+        trace_code = file_code[first_line:last_line]
+        return ''.join(trace_code)
+
     def export(self, output_path: Path | str):
+        # TODO: Create output by pipeline instead of for all traces
         if output_path is None:
             return
 
+        # TODO: This should be done in a better way
         with output_path.open('w') as output_file:
+            output_file.write("""<!DOCTYPE html>
+<html>
+    <head>
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.20.0/themes/prism.min.css">
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.20.0/prism.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.17.1/components/prism-python.min.js"></script>
+    </head>
+    <body>""")
             for trace in self.__traces:
                 image_buffer = io.BytesIO()
                 trace.image.save(image_buffer, format="JPEG")
                 base64_image = base64.b64encode(image_buffer.getvalue())
-                output_file.write(f'<img src="data:image/jpeg;base64,{base64_image.decode("utf-8")}" />\n</br>')
+                # TODO: Add line numbers in code
+                output_file.write(f'<pre><code class="language-python">{self.get_trace_code(trace)}</code></pre>')
+                output_file.write(f'<img src="data:image/jpeg;base64,{base64_image.decode("utf-8")}" />\n<br/>')
+            output_file.write("""    </body>
+</html>""")
+
+#     def to_notebook(self, output_path: Path | str):
+#         nb = nbf.v4.new_notebook()
+#
+#         initial_image_cell = nbf.v4.new_code_cell()
+# image_cell.source = """
+# import matplotlib.pyplot as plt
+#
+# # Load the image
+# img = plt.imread('https://upload.wikimedia.org/wikipedia/commons/thumb/a/a4/Lenna.png/1200px-Lenna.png')
+#
+# # Display the image
+# plt.imshow(img)
+# plt.show()
+# """
+# nb['cells'].append(image_cell)
+#
+# # Add a code cell that modifies the image
+# code_cell = nbf.v4.new_code_cell()
+# code_cell.source = """
+# import numpy as np
+#
+# # Convert the image to grayscale
+# gray = np.dot(img[...,:3], [0.2989, 0.5870, 0.1140])
+#
+# # Display the grayscale image
+# plt.imshow(gray, cmap='gray')
+# plt.show()
+# """
+# nb['cells'].append(code_cell)
+#
+# # Save the notebook
+# nbf.write(nb, 'my_notebook.ipynb')
+
 
 class ImageHandler(Handler):
     def __init__(self, tracer: Tracer, level=NOTSET):
@@ -120,6 +188,6 @@ class ImageHandler(Handler):
                 image,
                 timestamp=timestamp,
                 function_name=record.funcName,
-                file_name=record.filename,
+                file_name=record.pathname,
                 line_number=record.lineno
             )

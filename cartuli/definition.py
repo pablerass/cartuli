@@ -31,7 +31,7 @@ class Definition:
         self.__sheets = None
 
         if cards_filter is None:
-            cards_filter = lambda x: True
+            cards_filter = lambda x: True   # noqa: E731
         self.__cards_filter = cards_filter
 
     @property
