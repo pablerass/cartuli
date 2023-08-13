@@ -4,7 +4,7 @@ import numpy as np
 
 from PIL import Image, ImageOps, ImageDraw
 
-from ..measure import Size
+from .measure import Size
 
 
 def _to_size(value: Size | float | int) -> Size:

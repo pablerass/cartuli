@@ -1,4 +1,4 @@
-from cartuli.processing.processes import _get_rotation_angle, _discard_outliers
+from cartuli.processing import _get_rotation_angle, _discard_outliers
 
 
 def test_rotation_angle():

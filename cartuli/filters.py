@@ -11,7 +11,7 @@ from .processing import inpaint, straighten
 class Filter(ABC):
     @abstractmethod
     def apply(self, card_image: CardImage) -> CardImage:
-        pass
+        pass    # pragma: no cover
 
 
 @dataclass(frozen=True)

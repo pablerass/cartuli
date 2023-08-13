@@ -9,7 +9,7 @@ import sys
 from pathlib import Path
 
 from .definition import Definition
-from .processing import Tracer, ImageHandler
+from .tracing import Tracer, ImageHandler, TraceHTMLOutput
 
 
 def parse_args(args: list[str] = None) -> argparse.Namespace:
@@ -75,7 +75,8 @@ def main(args=None):
         logger.debug(f'Creating sheet {sheet_file}')
         sheet.create_pdf(sheet_file)
 
-    tracer.export(args.trace_output)
+    if tracer:
+        TraceHTMLOutput(tracer).create(args.trace_output)
 
     return 0
 
