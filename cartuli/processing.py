@@ -18,6 +18,9 @@ def _to_size(value: Size | float | int) -> Size:
     return value
 
 
+# TODO: Add scale function
+# def scale(image: Image.Image, /, ...) -> Image.Image:
+
 def inpaint(image: Image.Image, /, inpaint_size: Size | float | int, image_crop: Size | float | int = 0,
             corner_radius: Size | float | int = 0, inpaint_radius: float | int = 12) -> Image.Image:
     logger = logging.getLogger('cartuli.processing')
