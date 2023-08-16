@@ -61,12 +61,14 @@ class InpaintFilter(Filter):
 
 @dataclass(frozen=True)
 class StraightenFilter(Filter):
+    outliers_iqr_scale: float = 0.01
+
     def apply(self, card_image: CardImage) -> CardImage:
         logger = logging.getLogger('StraightenFilter')
         logger.debug(f'Applying to {card_image}')
 
         return CardImage(
-            straighten(card_image.image),
+            straighten(card_image.image, self.outliers_iqr_scale),
             size=card_image.size,
             bleed=card_image.bleed,
             name=card_image.name

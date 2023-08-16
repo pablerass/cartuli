@@ -70,7 +70,7 @@ class Definition:
                 front_images = []
                 if 'front' in deck_definition:
                     front_filter = deck_definition['front'].get('filter', '')
-                    front_image_files = glob(deck_definition['front']['images'])
+                    front_image_files = sorted(glob(deck_definition['front']['images']))
                     logger.debug(f"Found {len(front_image_files)} front images for '{name}' deck")
                     front_images = [
                         self.filters[front_filter].apply(

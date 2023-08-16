@@ -23,15 +23,19 @@ class CardImage:
             self.__image = Image.open(self.__image_path)
         elif isinstance(image, Image.Image):
             self.__image = image
+            if hasattr(image, 'filename'):
+                self.__image_path = Path(image.filename)
         else:
             raise TypeError(f"{type(image)} is not a valid image")
 
         self.__size = size
         self.__bleed = bleed
 
-        # TUNE: This can be inferred from path but it will broke tests
-        # if not name and self.__image_path is not None:
-        #     name = self.__image_path.stem
+        if not name and self.__image_path is not None:
+            try:
+                trace_name = str(self.__image_path.relative_to(Path.cwd()))
+            except ValueError:
+                trace_name = str(self.__image_path.stem)
         self.__name = name
 
     @property
@@ -118,7 +122,10 @@ class Card:
         self.__back = back
 
         self.__update_card_image_names(name)
-        self.__name = name
+        if not name and front.name:
+            self.__name = front.name
+        else:
+            self.__name = name
 
     @property
     def size(self) -> Size:

@@ -75,13 +75,14 @@ def _get_rotation_angle(line):
     return angle
 
 
-def _discard_outliers(data: np.ndarray | list, outlier_constant: float = 0.2) -> np.ndarray:
+def _discard_outliers(data: np.ndarray | list, iqr_scale: float = 1.5) -> np.ndarray:
     if not isinstance(data, np.ndarray):
         data = np.array(data)
     upper_quartile = np.percentile(data, 75)
     lower_quartile = np.percentile(data, 25)
-    iqr = (upper_quartile - lower_quartile) * outlier_constant
-    quartile_set = (lower_quartile - iqr, upper_quartile + iqr)
+    iqr = upper_quartile - lower_quartile
+    scaled_iqr = iqr * iqr_scale
+    quartile_set = (lower_quartile - scaled_iqr, upper_quartile + scaled_iqr)
     result_data = []
     for value in data:
         if value >= quartile_set[0] and value <= quartile_set[1]:
@@ -89,7 +90,7 @@ def _discard_outliers(data: np.ndarray | list, outlier_constant: float = 0.2) ->
     return result_data
 
 
-def straighten(image: Image.Image, /) -> Image.Image:
+def straighten(image: Image.Image, /, outliers_iqr_scale: float = 0.01) -> Image.Image:
     logger = logging.getLogger('cartuli.processing')
     logger.debug(image)
 
@@ -102,7 +103,7 @@ def straighten(image: Image.Image, /) -> Image.Image:
 
     # Discard outliers
     line_angles = {tuple(line[0]): _get_rotation_angle(line[0]) for line in lines}
-    angles = _discard_outliers(list(line_angles.values()))
+    angles = _discard_outliers(list(line_angles.values()), outliers_iqr_scale)
 
     # Generate debug image
     image_lines = image.copy()
@@ -119,7 +120,5 @@ def straighten(image: Image.Image, /) -> Image.Image:
     rotation_angle = -np.mean(angles)
     rotated_image = image.rotate(rotation_angle, expand=False)
     logger.debug(rotated_image)
-
-    # TUNE: Maybe new content generated after rotation should be inpainted
 
     return rotated_image
