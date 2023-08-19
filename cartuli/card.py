@@ -32,10 +32,7 @@ class CardImage:
         self.__bleed = bleed
 
         if not name and self.__image_path is not None:
-            try:
-                trace_name = str(self.__image_path.relative_to(Path.cwd()))
-            except ValueError:
-                trace_name = str(self.__image_path.stem)
+            name = str(self.__image_path.stem)
         self.__name = name
 
     @property
