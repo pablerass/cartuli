@@ -41,10 +41,10 @@ def main(args=None):
         logging_format = '[%(asctime)s] %(levelname)s - %(name)s - %(message)s'
     logging.basicConfig(stream=sys.stderr, format=logging_format,
                         level=logging.WARN - args.verbose * 10)
-    logging.getLogger('cartuli.processing').propagate = False
 
     if args.verbose < 4:
         logging.getLogger('PIL').propagate = False
+        logging.getLogger('cartuli.processing').propagate = False
 
     if args.trace_output:
         processing_logger = logging.getLogger('cartuli.processing')
