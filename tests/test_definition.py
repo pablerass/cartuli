@@ -64,10 +64,10 @@ def test_filters_definition():
     assert definition.filters['back'] == NullFilter()
 
 
-def test_definition(random_image):
-    random_image_dir = random_image("front").parent
+def test_definition(random_image_file):
+    random_image_dir = random_image_file("front").parent
     for _ in range(0, 4):
-        random_image("front")
+        random_image_file("front")
     definition_dict = {
         'decks': {
             'cards': {
@@ -77,7 +77,7 @@ def test_definition(random_image):
                     'bleed': '2*mm'
                 },
                 'back': {
-                    'image': str(random_image("back"))
+                    'image': str(random_image_file("back"))
                 }
             }
         },
@@ -98,3 +98,8 @@ def test_definition(random_image):
     assert definition.sheets['cards', ].cards == definition.decks[0].cards
     assert definition.sheets['cards', ].size == A4
     assert definition.sheets['cards', ].print_margin == 3*mm
+
+
+def test_filters(random_image_file):
+    # TODO: Implement filters testing
+    pass

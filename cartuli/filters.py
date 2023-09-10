@@ -2,7 +2,6 @@ import logging
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-# from pathlib import Path
 
 from .card import CardImage
 from .measure import mm, from_str
@@ -12,7 +11,7 @@ from .processing import inpaint, straighten
 class Filter(ABC):
     @abstractmethod
     def apply(self, card_image: CardImage) -> CardImage:
-        pass
+        pass    # pragma: no cover
 
 
 @dataclass(frozen=True)
@@ -52,8 +51,7 @@ class InpaintFilter(Filter):
                 inpaint_size=card_image.resolution * self.inpaint_size,
                 image_crop=card_image.resolution * self.image_crop,
                 corner_radius=card_image.resolution * self.corner_radius,
-                inpaint_radius=max(card_image.resolution) * self.inpaint_radius,
-                # debug_dir=Path(f'.debug/filters/inpaint/{card_image}')
+                inpaint_radius=max(card_image.resolution) * self.inpaint_radius
             ),
             size=card_image.size,
             bleed=card_image.bleed + self.inpaint_size,
@@ -63,15 +61,14 @@ class InpaintFilter(Filter):
 
 @dataclass(frozen=True)
 class StraightenFilter(Filter):
+    outliers_iqr_scale: float = 0.01
+
     def apply(self, card_image: CardImage) -> CardImage:
         logger = logging.getLogger('StraightenFilter')
         logger.debug(f'Applying to {card_image}')
 
         return CardImage(
-            straighten(
-                card_image.image,
-                # debug_dir=Path(f'.debug/{datetime.now().strftime("%Y%m%d-%H%M%S)}/filters/inpaint/{card_image}')),
-            ),
+            straighten(card_image.image, self.outliers_iqr_scale),
             size=card_image.size,
             bleed=card_image.bleed,
             name=card_image.name
@@ -90,7 +87,10 @@ def from_dict(filter_dict: dict) -> Filter:
     elif len(filter_dict) == 1:
         filter_name = list(filter_dict)[0]
         filter_class = globals()[snake_to_class(filter_name) + 'Filter']
-        return filter_class(**{k: from_str(v) for k, v in filter_dict[filter_name].items()})
+        filter_args = {}
+        if filter_dict[filter_name] is not None:
+            filter_args = {k: from_str(v) for k, v in filter_dict[filter_name].items()}
+        return filter_class(**filter_args)
     else:
         return MultipleFilter(
             *(from_dict({i[0]: i[1]}) for i in filter_dict.items())

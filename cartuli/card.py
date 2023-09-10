@@ -23,15 +23,16 @@ class CardImage:
             self.__image = Image.open(self.__image_path)
         elif isinstance(image, Image.Image):
             self.__image = image
+            if hasattr(image, 'filename'):
+                self.__image_path = Path(image.filename)
         else:
             raise TypeError(f"{type(image)} is not a valid image")
 
         self.__size = size
         self.__bleed = bleed
 
-        # TUNE: This can be inferred from path but it will broke tests
-        # if not name and self.__image_path is not None:
-        #     name = self.__image_path.stem
+        if not name and self.__image_path is not None:
+            name = str(self.__image_path.stem)
         self.__name = name
 
     @property
@@ -87,10 +88,11 @@ class CardImage:
 class Card:
     """One or two sided card representation."""
 
-    def __init__(self, front: Path | str | CardImage, back: Path | str | CardImage = None, /,
+    def __init__(self, front: Path | str | Image.Image | CardImage,
+                 back: Path | str | Image.Image | CardImage = None, /,
                  size: Size = None, name: str = ''):
 
-        if isinstance(front, Path) or isinstance(front, str):
+        if isinstance(front, Path) or isinstance(front, str) or isinstance(front, Image.Image):
             if size is None:
                 raise ValueError("size must be specified when not using a CardImage as front")
             front = CardImage(front, size)
@@ -103,7 +105,8 @@ class Card:
             raise TypeError(f"{type(front)} is not a valid image")
 
         if back is not None:
-            if isinstance(back, Path) or isinstance(back, str):
+            # TUNE: This code is duplicated with back setter
+            if isinstance(back, Path) or isinstance(back, str) or isinstance(back, Image.Image):
                 back = CardImage(back, size)
             elif isinstance(back, CardImage):
                 if size != back.size:
@@ -116,7 +119,10 @@ class Card:
         self.__back = back
 
         self.__update_card_image_names(name)
-        self.__name = name
+        if not name and front.name:
+            self.__name = front.name
+        else:
+            self.__name = name
 
     @property
     def size(self) -> Size:
@@ -131,11 +137,11 @@ class Card:
         return self.__back
 
     @back.setter
-    def back(self, back: Path | str | CardImage):
+    def back(self, back: Path | str | CardImage | Image.Image):
         if self.__back is not None:
             raise AttributeError("can't set attribute 'back' if already set")
 
-        if isinstance(back, Path) or isinstance(back, str):
+        if isinstance(back, Path) or isinstance(back, str) or isinstance(back, Image.Image):
             back = CardImage(back, self.__size)
         elif isinstance(back, CardImage):
             if self.__size != back.size:
