@@ -8,6 +8,7 @@ from collections import defaultdict
 from collections.abc import Callable
 from glob import glob
 from itertools import chain, groupby
+from multiprocessing import Pool, cpu_count
 from pathlib import Path
 
 from .card import Card, CardImage
@@ -60,56 +61,59 @@ class Definition:
 
     @property
     def decks(self) -> list[Deck]:
-        # TUNE: Remove front_card concept and let it in cards
+        # TUNE: This code is crap, should be refacored
         logger = logging.getLogger('cartuli.definition.Definition.decks')
         if self.__decks is None:
             self.__decks = []
             for name, deck_definition in self.__values.get('decks', {}).items():
                 logger.debug(f"Deck '{name}' definition {deck_definition}")
-                size = Size.from_str(deck_definition['size'])
-                front_images = []
-                if 'front' in deck_definition:
-                    front_filter = deck_definition['front'].get('filter', '')
-                    front_image_files = sorted(glob(deck_definition['front']['images']))
-                    logger.debug(f"Found {len(front_image_files)} front images for '{name}' deck")
-                    front_images = [
-                        self.filters[front_filter].apply(
-                            CardImage(
-                                path, size=size,
-                                bleed=from_str(deck_definition['front'].get('bleed', str(CardImage.DEFAULT_BLEED))),
-                                name=Path(path).stem
-                            )
-                        ) for path in front_image_files if self.__cards_filter(path)
-                    ]
-                    if len(front_image_files) != len(front_images):
-                        logger.debug(f"Front images filterd from {len(front_image_files)} to "
-                                     f" {len(front_images)} for '{name}' deck")
-                back_image = None
-                if 'back' in deck_definition:
-                    back_image_file = deck_definition['back']['image']
-                    if self.__cards_filter(back_image_file):
-                        back_filter = deck_definition['back'].get('filter', '')
-                        back_image = self.filters[back_filter].apply(
-                            CardImage(
-                                deck_definition['back']['image'],
-                                size=size,
-                                bleed=from_str(deck_definition['back'].get('bleed', str(CardImage.DEFAULT_BLEED))),
-                                name=Path(back_image_file).stem
-                            )
-                        )
-                    else:
-                        logger.debug(f"Back image '{back_image_file}' filtered for '{name}' deck")
-                deck = Deck((Card(image) for image in front_images), default_back=back_image, size=size, name=name)
-                self.__decks.append(deck)
+                self.__decks.append(self._create_deck(deck_definition, name))
             if not self.__decks:
                 logger.warning('No decks loaded in definition')
 
         return self.__decks
 
+    def _create_deck(self, definition: dict, name: str) -> Deck:
+        logger = logging.getLogger('cartuli.definition.Definition.decks')
+
+        size = Size.from_str(definition['size'])
+        front_images = []
+        if 'front' in definition:
+            front_filter = definition['front'].get('filter', '')
+            front_image_files = sorted(glob(definition['front']['images']))
+            logger.debug(f"Found {len(front_image_files)} front images for '{name}' deck")
+            with Pool(processes=cpu_count() - 1) as pool:
+                front_images = pool.map(
+                    self.filters[front_filter].apply,
+                    (CardImage(
+                        path, size=size,
+                        bleed=from_str(definition['front'].get('bleed', str(CardImage.DEFAULT_BLEED))),
+                        name=Path(path).stem
+                     ) for path in front_image_files if self.__cards_filter(path))
+                )
+            if len(front_image_files) != len(front_images):
+                logger.debug(f"Front images filterd from {len(front_image_files)} to "
+                             f" {len(front_images)} for '{name}' deck")
+        back_image = None
+        if 'back' in definition:
+            back_image_file = definition['back']['image']
+            if self.__cards_filter(back_image_file):
+                back_filter = definition['back'].get('filter', '')
+                back_image = self.filters[back_filter].apply(
+                    CardImage(
+                        definition['back']['image'],
+                        size=size,
+                        bleed=from_str(definition['back'].get('bleed', str(CardImage.DEFAULT_BLEED))),
+                        name=Path(back_image_file).stem
+                    )
+                )
+            else:
+                logger.debug(f"Back image '{back_image_file}' filtered for '{name}' deck")
+        return Deck((Card(image) for image in front_images), default_back=back_image, size=size, name=name)
+
     @property
     def sheets(self) -> dict[tuple[str], Sheet]:
         # TODO: Replace sheets with generic outputs
-        # TODO: Add deck filters to output definition
         if self.__sheets is None:
             self.__sheets = {}
             if 'sheet' in self.__values['outputs']:
