@@ -6,10 +6,10 @@ import os
 import re
 import sys
 
+from carpeta import Tracer, ImageHandler, trace_output
 from pathlib import Path
 
 from .definition import Definition
-from .tracing import Tracer, ImageHandler, trace_output
 
 
 def parse_args(args: list[str] = None) -> argparse.Namespace:
