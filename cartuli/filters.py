@@ -5,7 +5,7 @@ from dataclasses import dataclass
 
 from .card import CardImage
 from .measure import mm, from_str
-from .processing import inpaint, straighten
+from .processing import inpaint, straighten, crop
 
 
 class Filter(ABC):
@@ -69,6 +69,22 @@ class StraightenFilter(Filter):
 
         return CardImage(
             straighten(card_image.image, self.outliers_iqr_scale),
+            size=card_image.size,
+            bleed=card_image.bleed,
+            name=card_image.name
+        )
+
+
+@dataclass(frozen=True)
+class CropFilter(Filter):
+    size: float = 3*mm
+
+    def apply(self, card_image: CardImage) -> CardImage:
+        logger = logging.getLogger('CropFilter')
+        logger.debug(f'Applying to {card_image}')
+
+        return CardImage(
+            crop(card_image.image, size=card_image.resolution * self.size),
             size=card_image.size,
             bleed=card_image.bleed,
             name=card_image.name

@@ -127,3 +127,15 @@ def straighten(image: Image.Image, /, outliers_iqr_scale: float = 0.01) -> Image
     # TUNE: Maybe new content generated after rotation should be inpainted
 
     return rotated_image
+
+
+def crop(image: Image.Image, /, size: Size | float | int = 5) -> Image.Image:
+    logger = logging.getLogger('cartuli.processing')
+
+    logger.debug(f"Start {image} image crop", extra={'trace': image})
+    crop_size = _to_size(size)
+    crop_box = (crop_size.width, crop_size.height, image.width - crop_size.width, image.height - crop_size.height)
+    crop_image = image.crop(crop_box)
+    logger.debug(f"Crop {image}", extra={'trace': crop_image})
+
+    return crop_image
