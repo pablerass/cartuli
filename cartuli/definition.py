@@ -91,10 +91,12 @@ class Definition:
                         name=Path(path).stem
                      ) for path in front_image_files if self.__cards_filter(path))
                 )
-                # TODO: Add warning if no images are found
+                # TODO: Add warning if no images are found and manage it properly and do not create
+                # deck
             if len(front_image_files) != len(front_images):
                 logger.debug(f"Front images filterd from {len(front_image_files)} to "
                              f" {len(front_images)} for '{name}' deck")
+
         back_image = None
         if 'back' in definition:
             if 'image' in definition['back']:
@@ -127,6 +129,7 @@ class Definition:
                         ) for path in back_image_files if self.__cards_filter(path))
                     )
                     # TODO: Add warning if no images are found
+                    # TODO: Add error if front and back sizes do not match
                     return Deck(
                         (Card(front_image, back_image) for front_image, back_image in zip(front_images, back_images)),
                         size=size, name=name
@@ -134,8 +137,8 @@ class Definition:
                 if len(back_image_files) != len(back_images):
                     logger.debug(f"Back images filterd from {len(back_image_files)} to "
                                  f" {len(back_images)} for '{name}' deck")
-            else:
-                return Deck((Card(image) for image in front_images), size=size, name=name)
+
+        return Deck((Card(image) for image in front_images), size=size, name=name)
 
     @property
     def sheets(self) -> dict[tuple[str], Sheet]:
