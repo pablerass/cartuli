@@ -91,25 +91,51 @@ class Definition:
                         name=Path(path).stem
                      ) for path in front_image_files if self.__cards_filter(path))
                 )
+                # TODO: Add warning if no images are found
             if len(front_image_files) != len(front_images):
                 logger.debug(f"Front images filterd from {len(front_image_files)} to "
                              f" {len(front_images)} for '{name}' deck")
         back_image = None
         if 'back' in definition:
-            back_image_file = definition['back']['image']
-            if self.__cards_filter(back_image_file):
-                back_filter = definition['back'].get('filter', '')
-                back_image = self.filters[back_filter].apply(
-                    CardImage(
-                        definition['back']['image'],
-                        size=size,
-                        bleed=from_str(definition['back'].get('bleed', str(CardImage.DEFAULT_BLEED))),
-                        name=Path(back_image_file).stem
+            if 'image' in definition['back']:
+                back_image_file = definition['back']['image']
+                if self.__cards_filter(back_image_file):
+                    back_filter = definition['back'].get('filter', '')
+                    back_image = self.filters[back_filter].apply(
+                        CardImage(
+                            definition['back']['image'],
+                            size=size,
+                            bleed=from_str(definition['back'].get('bleed', str(CardImage.DEFAULT_BLEED))),
+                            name=Path(back_image_file).stem
+                        )
                     )
-                )
+                    return Deck((Card(image) for image in front_images), default_back=back_image, size=size, name=name)
+                else:
+                    logger.debug(f"Back image '{back_image_file}' filtered for '{name}' deck")
+
+            if 'images' in definition['back']:
+                back_filter = definition['back'].get('filter', '')
+                back_image_files = sorted(glob(definition['back']['images']))
+                logger.debug(f"Found {len(back_image_files)} back images for '{name}' deck")
+                with Pool(processes=cpu_count() - 1) as pool:
+                    back_images = pool.map(
+                        self.filters[back_filter].apply,
+                        (CardImage(
+                            path, size=size,
+                            bleed=from_str(definition['back'].get('bleed', str(CardImage.DEFAULT_BLEED))),
+                            name=Path(path).stem
+                        ) for path in back_image_files if self.__cards_filter(path))
+                    )
+                    # TODO: Add warning if no images are found
+                    return Deck(
+                        (Card(front_image, back_image) for front_image, back_image in zip(front_images, back_images)),
+                        size=size, name=name
+                    )
+                if len(back_image_files) != len(back_images):
+                    logger.debug(f"Back images filterd from {len(back_image_files)} to "
+                                 f" {len(back_images)} for '{name}' deck")
             else:
-                logger.debug(f"Back image '{back_image_file}' filtered for '{name}' deck")
-        return Deck((Card(image) for image in front_images), default_back=back_image, size=size, name=name)
+                return Deck((Card(image) for image in front_images), size=size, name=name)
 
     @property
     def sheets(self) -> dict[tuple[str], Sheet]:
