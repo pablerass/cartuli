@@ -3,7 +3,7 @@ decks:
     size: "STANDARD"
     front:
       images: "cards/*.png"
-    back:
+    default_back:
       image: "card-back.png"
 outputs:
   sheet:

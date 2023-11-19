@@ -11,7 +11,7 @@ from itertools import chain, groupby
 from multiprocessing import Pool, cpu_count
 from pathlib import Path
 
-from .card import Card, CardImage
+from .card import CardImage, Card
 from .deck import Deck
 from .filters import Filter, NullFilter, from_dict as filter_from_dict
 from .measure import Size, from_str
@@ -19,6 +19,10 @@ from .sheet import Sheet
 
 
 CardsFilter = Callable[[Path], bool]
+
+
+class DefinitionError(Exception):
+    pass
 
 
 class Definition:
@@ -67,78 +71,67 @@ class Definition:
             self.__decks = []
             for name, deck_definition in self.__values.get('decks', {}).items():
                 logger.debug(f"Deck '{name}' definition {deck_definition}")
-                self.__decks.append(self._create_deck(deck_definition, name))
+                self.__decks.append(self._load_deck(deck_definition, name))
             if not self.__decks:
                 logger.warning('No decks loaded in definition')
 
         return self.__decks
 
-    def _create_deck(self, definition: dict, name: str) -> Deck:
+    def _load_images(self, images_definition: dict, size: Size, deck_name: str, side: str = 'front') -> list[CardImage]:
+        logger = logging.getLogger('cartuli.definition.Definition.decks')
+
+        image_filter = images_definition.get('filter', '')
+        image_files = sorted(glob(images_definition['images']))
+        logger.debug(f"Found {len(image_files)} {side} images for '{deck_name}' deck")
+        with Pool(processes=cpu_count() - 1) as pool:
+            images = pool.map(
+                self.filters[image_filter].apply,
+                (CardImage(
+                    path, size=size,
+                    bleed=from_str(images_definition.get('bleed', str(CardImage.DEFAULT_BLEED))),
+                    name=Path(path).stem
+                ) for path in image_files if self.__cards_filter(path))
+            )
+        if len(image_files) != len(images):
+            logger.debug(f"{side.capitalize()} images filterd from {len(image_files)} to "
+                         f" {len(images)} for '{deck_name}' deck")
+
+        return images
+
+    def _load_deck(self, definition: dict, name: str) -> Deck:
         logger = logging.getLogger('cartuli.definition.Definition.decks')
 
         size = Size.from_str(definition['size'])
-        front_images = []
+        cards = []
+
         if 'front' in definition:
-            front_filter = definition['front'].get('filter', '')
-            front_image_files = sorted(glob(definition['front']['images']))
-            logger.debug(f"Found {len(front_image_files)} front images for '{name}' deck")
-            with Pool(processes=cpu_count() - 1) as pool:
-                front_images = pool.map(
-                    self.filters[front_filter].apply,
-                    (CardImage(
-                        path, size=size,
-                        bleed=from_str(definition['front'].get('bleed', str(CardImage.DEFAULT_BLEED))),
-                        name=Path(path).stem
-                     ) for path in front_image_files if self.__cards_filter(path))
+            front_images = self._load_images(definition['front'], size, name, 'front')
+            if 'back' in definition:
+                back_images = self._load_images(definition['back'], size, name, 'back')
+                if len(front_images) != len(back_images):
+                    raise DefinitionError(f"The number of front ({len(front_images)}) and "
+                                          f"back ({len(back_images)}) images must be the same")
+                cards = [Card(front_image, back_image) for front_image, back_image in zip(front_images, back_images)]
+            else:
+                cards = [Card(image) for image in front_images]
+
+        if not cards:
+            logger.warning(f"No cards found for deck {name} with specified fiters")
+
+        default_back = None
+        if 'default_back' in definition:
+            default_back_file = definition['default_back']['image']
+            default_back_filter = definition['default_back'].get('filter', '')
+            default_back = self.filters[default_back_filter].apply(
+                CardImage(
+                    default_back_file,
+                    size=size,
+                    bleed=from_str(definition['default_back'].get('bleed', str(CardImage.DEFAULT_BLEED))),
+                    name=Path(default_back_file).stem
                 )
-                # TODO: Add warning if no images are found and manage it properly and do not create
-                # deck
-            if len(front_image_files) != len(front_images):
-                logger.debug(f"Front images filterd from {len(front_image_files)} to "
-                             f" {len(front_images)} for '{name}' deck")
+            )
 
-        back_image = None
-        if 'back' in definition:
-            if 'image' in definition['back']:
-                back_image_file = definition['back']['image']
-                if self.__cards_filter(back_image_file):
-                    back_filter = definition['back'].get('filter', '')
-                    back_image = self.filters[back_filter].apply(
-                        CardImage(
-                            definition['back']['image'],
-                            size=size,
-                            bleed=from_str(definition['back'].get('bleed', str(CardImage.DEFAULT_BLEED))),
-                            name=Path(back_image_file).stem
-                        )
-                    )
-                    return Deck((Card(image) for image in front_images), default_back=back_image, size=size, name=name)
-                else:
-                    logger.debug(f"Back image '{back_image_file}' filtered for '{name}' deck")
-
-            if 'images' in definition['back']:
-                back_filter = definition['back'].get('filter', '')
-                back_image_files = sorted(glob(definition['back']['images']))
-                logger.debug(f"Found {len(back_image_files)} back images for '{name}' deck")
-                with Pool(processes=cpu_count() - 1) as pool:
-                    back_images = pool.map(
-                        self.filters[back_filter].apply,
-                        (CardImage(
-                            path, size=size,
-                            bleed=from_str(definition['back'].get('bleed', str(CardImage.DEFAULT_BLEED))),
-                            name=Path(path).stem
-                        ) for path in back_image_files if self.__cards_filter(path))
-                    )
-                    # TODO: Add warning if no images are found
-                    # TODO: Add error if front and back sizes do not match
-                    return Deck(
-                        (Card(front_image, back_image) for front_image, back_image in zip(front_images, back_images)),
-                        size=size, name=name
-                    )
-                if len(back_image_files) != len(back_images):
-                    logger.debug(f"Back images filterd from {len(back_image_files)} to "
-                                 f" {len(back_images)} for '{name}' deck")
-
-        return Deck((Card(image) for image in front_images), size=size, name=name)
+        return Deck(cards, name=name, default_back=default_back, size=size)
 
     @property
     def sheets(self) -> dict[tuple[str], Sheet]:

@@ -20,7 +20,7 @@ def test_file(fixture_file):
                 'front': {
                     'images': "cards/*.png"
                 },
-                'back': {
+                'default_back': {
                     'image': "card-back.png"
                 }
             }
@@ -76,7 +76,7 @@ def test_definition(random_image_file):
                     'images': str(random_image_dir / "*.png"),
                     'bleed': '2*mm'
                 },
-                'back': {
+                'default_back': {
                     'image': str(random_image_file("back"))
                 }
             }
