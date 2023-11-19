@@ -262,6 +262,10 @@ class Sheet(object):
         c = canvas.Canvas(str(path), pagesize=tuple(self.size))
         for page in range(1, self.pages + 1):
             # Front
+            for line in self.crop_marks:
+                c.setLineWidth(0.5)
+                c.line(*list(line))
+
             for i, card in enumerate(self.page_cards(page)):
                 num_card = i + 1
                 card_image = card.front.image
