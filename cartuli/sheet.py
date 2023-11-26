@@ -90,6 +90,7 @@ class Sheet(object):
     def __len__(self):
         return len(self.__cards)
 
+    # TODO: Add minimum crop mark length
     @property
     def margin(self) -> float:
         """Return sheet margin to center content."""
@@ -146,72 +147,113 @@ class Sheet(object):
              coordinates.y * self.padding)
         return Point(x, y)
 
+    def _calculate_border_horizontal_crop_marks(self) -> list[Line]:
+        crop_marks = []
+
+        for y in range(self.cards_per_page.height):
+            start_y_point = self.margin.height + y * (self.card_size.height + self.padding)
+            end_y_point = start_y_point + self.card_size.height
+
+            crop_marks.append(Line(
+                Point(self.print_margin, start_y_point),
+                Point(self.margin.width - self.crop_marks_padding, start_y_point)))
+
+            crop_marks.append(Line(
+                Point(self.print_margin, end_y_point),
+                Point(self.margin.width - self.crop_marks_padding, end_y_point)))
+
+            crop_marks.append(Line(
+                Point(self.size.width - self.margin.width + self.crop_marks_padding, start_y_point),
+                Point(self.size.width - self.print_margin, start_y_point)))
+
+            crop_marks.append(Line(
+                Point(self.size.width - self.margin.width + self.crop_marks_padding, end_y_point),
+                Point(self.size.width - self.print_margin, end_y_point)))
+
+        return crop_marks
+
+    def _calculate_middle_horizontal_crop_marks(self) -> list[Line]:
+        crop_marks = []
+
+        for y in range(self.cards_per_page.height):
+            start_y_point = self.margin.height + y * (self.card_size.height + self.padding)
+            end_y_point = start_y_point + self.card_size.height
+
+            if 2 * self.crop_marks_padding < self.padding:
+                for x in range(self.cards_per_page.width - 1):
+                    crop_marks.append(Line(
+                        Point(self.margin.width + (x + 1) * self.card_size.width + x * self.padding
+                              + self.crop_marks_padding, start_y_point),
+                        Point(self.margin.width + (x + 1) * (self.card_size.width + self.padding)
+                              - self.crop_marks_padding, start_y_point)))
+
+                    crop_marks.append(Line(
+                        Point(self.margin.width + (x + 1) * self.card_size.width + x * self.padding
+                              + self.crop_marks_padding, end_y_point),
+                        Point(self.margin.width + (x + 1) * (self.card_size.width + self.padding)
+                              - self.crop_marks_padding, end_y_point)))
+
+        return crop_marks
+
+    def _calculate_border_vertical_crop_marks(self) -> list[Line]:
+        crop_marks = []
+        for x in range(self.cards_per_page.width):
+            start_x_point = self.margin.width + x * (self.card_size.width + self.padding)
+            end_x_point = start_x_point + self.card_size.width
+
+            crop_marks.append(Line(
+                Point(start_x_point, self.print_margin),
+                Point(start_x_point, self.margin.height - self.crop_marks_padding)))
+
+            crop_marks.append(Line(
+                Point(end_x_point, self.print_margin),
+                Point(end_x_point, self.margin.height - self.crop_marks_padding)))
+
+            crop_marks.append(Line(
+                Point(start_x_point, self.size.height - self.margin.height + self.crop_marks_padding),
+                Point(start_x_point, self.size.height - self.print_margin)))
+
+            crop_marks.append(Line(
+                Point(end_x_point, self.size.height - self.margin.height + self.crop_marks_padding),
+                Point(end_x_point, self.size.height - self.print_margin)))
+
+        return crop_marks
+
+    def _calculate_middle_vertical_crop_marks(self) -> list[Line]:
+        crop_marks = []
+
+        for x in range(self.cards_per_page.width):
+            start_x_point = self.margin.width + x * (self.card_size.width + self.padding)
+            end_x_point = start_x_point + self.card_size.width
+
+            if 2 * self.crop_marks_padding < self.padding:
+                for y in range(self.cards_per_page.height - 1):
+                    crop_marks.append(Line(
+                        Point(start_x_point, self.margin.height + (y + 1) * self.card_size.height
+                              + y * self.padding + self.crop_marks_padding),
+                        Point(start_x_point, self.margin.height +
+                              (y + 1) * (self.card_size.height + self.padding) - self.crop_marks_padding)))
+
+                    crop_marks.append(Line(
+                        Point(end_x_point, self.margin.height + (y + 1) * self.card_size.height
+                              + y * self.padding + self.crop_marks_padding),
+                        Point(end_x_point, self.margin.height + (y + 1) * (self.card_size.height + self.padding)
+                              - self.crop_marks_padding)))
+
+        return crop_marks
+
+    # TODO: Extract crop marks calculation from sheet class,
+    # think again about it in the future, maybe it is not the best idea
     @property
     def crop_marks(self) -> list[Line]:
         """Return the crop marks to be drawn in each page."""
-        # TUNE: This is not manageable
         if self.__crop_marks is None:
-            crop_marks = []
-
-            for x in range(self.cards_per_page.width):
-                start_x_point = self.margin.width + x * (self.card_size.width + self.padding)
-                end_x_point = start_x_point + self.card_size.width
-
-                crop_marks.append(Line(
-                    Point(start_x_point, self.print_margin),
-                    Point(start_x_point, self.margin.height - self.crop_marks_padding)))
-                crop_marks.append(Line(
-                    Point(end_x_point, self.print_margin),
-                    Point(end_x_point, self.margin.height - self.crop_marks_padding)))
-                if 2 * self.crop_marks_padding < self.padding:
-                    for y in range(self.cards_per_page.height - 1):
-                        crop_marks.append(Line(
-                            Point(start_x_point, self.margin.height + (y + 1) * self.card_size.height
-                                  + y * self.padding + self.crop_marks_padding),
-                            Point(start_x_point, self.margin.height +
-                                  (y + 1) * (self.card_size.height + self.padding) - self.crop_marks_padding)))
-                        crop_marks.append(Line(
-                            Point(end_x_point, self.margin.height + (y + 1) * self.card_size.height
-                                  + y * self.padding + self.crop_marks_padding),
-                            Point(end_x_point, self.margin.height + (y + 1) * (self.card_size.height + self.padding)
-                                  - self.crop_marks_padding)))
-                crop_marks.append(Line(
-                    Point(start_x_point, self.size.height - self.margin.height + self.crop_marks_padding),
-                    Point(start_x_point, self.size.height - self.print_margin)))
-                crop_marks.append(Line(
-                    Point(end_x_point, self.size.height - self.margin.height + self.crop_marks_padding),
-                    Point(end_x_point, self.size.height - self.print_margin)))
-
-            for y in range(self.cards_per_page.height):
-                start_y_point = self.margin.height + y * (self.card_size.height + self.padding)
-                end_y_point = start_y_point + self.card_size.height
-
-                crop_marks.append(Line(
-                    Point(self.print_margin, start_y_point),
-                    Point(self.margin.width - self.crop_marks_padding, start_y_point)))
-                crop_marks.append(Line(
-                    Point(self.print_margin, end_y_point),
-                    Point(self.margin.width - self.crop_marks_padding, end_y_point)))
-                if 2 * self.crop_marks_padding < self.padding:
-                    for x in range(self.cards_per_page.width - 1):
-                        crop_marks.append(Line(
-                            Point(self.margin.width + (x + 1) * self.card_size.width + x * self.padding
-                                  + self.crop_marks_padding, start_y_point),
-                            Point(self.margin.width + (x + 1) * (self.card_size.width + self.padding)
-                                  - self.crop_marks_padding, start_y_point)))
-                        crop_marks.append(Line(
-                            Point(self.margin.width + (x + 1) * self.card_size.width + x * self.padding
-                                  + self.crop_marks_padding, end_y_point),
-                            Point(self.margin.width + (x + 1) * (self.card_size.width + self.padding)
-                                  - self.crop_marks_padding, end_y_point)))
-                crop_marks.append(Line(
-                    Point(self.size.width - self.margin.width + self.crop_marks_padding, start_y_point),
-                    Point(self.size.width - self.print_margin, start_y_point)))
-                crop_marks.append(Line(
-                    Point(self.size.width - self.margin.width + self.crop_marks_padding, end_y_point),
-                    Point(self.size.width - self.print_margin, end_y_point)))
-
-            self.__crop_marks = crop_marks
+            self.__crop_marks = (
+                self._calculate_border_horizontal_crop_marks() +
+                self._calculate_middle_horizontal_crop_marks() +
+                self._calculate_border_vertical_crop_marks() +
+                self._calculate_middle_vertical_crop_marks()
+            )
 
         return self.__crop_marks
 

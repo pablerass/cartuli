@@ -1,6 +1,6 @@
 import pytest
 
-from cartuli.measure import Size, mm, A4, MINI_USA
+from cartuli.measure import Line, Point, Size, mm, A4, MINI_USA
 
 
 def test_size():
@@ -13,3 +13,10 @@ def test_size():
         Size.from_str("[3*mm, 4*mm]") == Size(3*mm, 4*mm)
     with pytest.raises(ValueError):
         Size.from_str("Size")
+
+
+def test_line():
+    a = Point(0, 0)
+    b = Point(1, 1)
+
+    assert Line(a, b) == Line(b, a)
