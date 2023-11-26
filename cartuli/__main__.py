@@ -10,6 +10,7 @@ from carpeta import Tracer, ImageHandler, trace_output
 from pathlib import Path
 
 from .definition import Definition
+from .output import sheet_pdf_output
 
 
 def parse_args(args: list[str] = None) -> argparse.Namespace:
@@ -73,7 +74,7 @@ def main(args=None):
         sheet_dir.mkdir(exist_ok=True)
         sheet_file = sheet_dir / f"{'_'.join(deck_names)}.pdf"
         logger.debug(f'Creating sheet {sheet_file}')
-        sheet.create_pdf(sheet_file)
+        sheet_pdf_output(sheet, sheet_file)
 
     if tracer:
         trace_output(tracer, args.trace_output)
