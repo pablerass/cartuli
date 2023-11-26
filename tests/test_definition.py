@@ -65,20 +65,24 @@ def test_filters_definition():
 
 
 def test_definition(random_image_file):
+    num_cards = 5
+
     random_image_dir = random_image_file("front").parent
-    for _ in range(0, 4):
+    for _ in range(0, num_cards - 1):
         random_image_file("front")
+
     definition_dict = {
         'decks': {
             'cards': {
                 'size': 'STANDARD',
                 'front': {
                     'images': str(random_image_dir / "*.png"),
-                    'bleed': '2*mm'
+                    'bleed': '2*mm',
                 },
                 'default_back': {
                     'image': str(random_image_file("back"))
-                }
+                },
+                'copies': 2
             }
         },
         'outputs': {
@@ -92,7 +96,7 @@ def test_definition(random_image_file):
     definition = Definition(definition_dict)
     assert definition.decks[0].name == 'cards'
     assert definition.decks[0].size == STANDARD
-    assert len(definition.decks[0]) == 5
+    assert len(definition.decks[0]) == 2 * num_cards
     assert definition.decks[0].two_sided
     assert definition.decks[0].cards[0].front.bleed == 2*mm
     assert definition.sheets['cards', ].cards == definition.decks[0].cards

@@ -118,6 +118,8 @@ class Definition:
         if not cards:
             logger.warning(f"No cards found for deck {name} with specified fiters")
 
+        cards = cards * definition.get('copies', 1)
+
         default_back = None
         if 'default_back' in definition:
             default_back_file = definition['default_back']['image']
