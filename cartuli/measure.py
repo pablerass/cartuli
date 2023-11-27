@@ -19,7 +19,7 @@ __all__ = [
 ]
 
 
-isclose = partial(isclose, rel_tol=1e-04)
+measure_is_close = partial(isclose, abs_tol=0.001*mm)
 
 
 def from_str(measure: str | int | float) -> float:
@@ -36,7 +36,7 @@ class Size:
     height: float | int
 
     def __eq__(self, other):
-        return isclose(self.width, other.width) and isclose(self.height, other.height)
+        return measure_is_close(self.width, other.width) and measure_is_close(self.height, other.height)
 
     def __str__(self):
         return f"({self.width}, {self.height})"
@@ -72,7 +72,7 @@ class Point:
     y: float | int
 
     def __eq__(self, other):
-        return isclose(self.x, other.x) and isclose(self.y, other.y)
+        return measure_is_close(self.x, other.x) and measure_is_close(self.y, other.y)
 
     def __str__(self):
         return f"({self.x}, {self.y})"
@@ -87,6 +87,10 @@ class Line:
 
     a: Point
     b: Point
+
+    def __eq__(self, other):
+        return ((self.a == other.a) and (self.b == other.b) or
+                (self.a == other.b) and (self.b == other.a))
 
     def __str__(self):
         return f"{self.a} <-> {self.b}"

@@ -154,12 +154,11 @@ class Definition:
                     self.__sheets[deck_names] = Sheet(
                         cards,
                         size=Size.from_str(sheet_definition.get('size', str(Sheet.DEFAULT_SIZE))),
-                        margin=from_str(sheet_definition.get('margin', str(Sheet.DEFAULT_MARGIN))),
+                        print_margin=from_str(sheet_definition.get('print_margin',
+                                                                   str(Sheet.DEFAULT_PRINT_MARGIN))),
                         padding=from_str(sheet_definition.get('padding', str(Sheet.DEFAULT_PADDING))),
                         crop_marks_padding=from_str(
-                            sheet_definition.get('crop_marks_padding', str(Sheet.DEFAULT_CROP_MARKS_PADDING))),
-                        print_margin=from_str(sheet_definition.get('print_margin',
-                                                                   str(Sheet.DEFAULT_PRINT_MARGIN)))
+                            sheet_definition.get('crop_marks_padding', str(Sheet.DEFAULT_CROP_MARKS_PADDING)))
                     )
 
         return self.__sheets
