@@ -1,6 +1,7 @@
 """Card module."""
 from pathlib import Path
 
+from carpeta import register_id_extractor
 from PIL import Image
 
 from .measure import Size
@@ -41,7 +42,7 @@ class CardImage:
 
     @property
     def image_path(self) -> Path | None:
-        return self.__image
+        return self.__image_path
 
     @property
     def size(self) -> Size:
@@ -83,6 +84,10 @@ class CardImage:
         if self.name:
             return self.name
         return super().__str__()
+
+
+# TUNE: Not sure if this is the best place to place this...
+register_id_extractor(CardImage, lambda x: x.name)
 
 
 class Card:

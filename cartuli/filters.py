@@ -1,6 +1,7 @@
 import logging
 
 from abc import ABC, abstractmethod
+from carpeta import Traceable, extract_id
 from dataclasses import dataclass
 
 from .card import CardImage
@@ -47,7 +48,7 @@ class InpaintFilter(Filter):
 
         return CardImage(
             inpaint(
-                card_image.image,
+                Traceable(card_image.image, extract_id(card_image)),
                 inpaint_size=card_image.resolution * self.inpaint_size,
                 image_crop=card_image.resolution * self.image_crop,
                 corner_radius=card_image.resolution * self.corner_radius,
@@ -68,7 +69,10 @@ class StraightenFilter(Filter):
         logger.debug(f'Applying to {card_image}')
 
         return CardImage(
-            straighten(card_image.image, self.outliers_iqr_scale),
+            straighten(
+                Traceable(card_image.image, extract_id(card_image)),
+                self.outliers_iqr_scale
+            ),
             size=card_image.size,
             bleed=card_image.bleed,
             name=card_image.name
@@ -84,7 +88,10 @@ class CropFilter(Filter):
         logger.debug(f'Applying to {card_image}')
 
         return CardImage(
-            crop(card_image.image, size=card_image.resolution * self.size),
+            crop(
+                Traceable(card_image.image, extract_id(card_image)),
+                size=card_image.resolution * self.size
+            ).value,    # Traceable values are returned as traceable in crop, this solution is crap
             size=card_image.size,
             bleed=card_image.bleed,
             name=card_image.name
