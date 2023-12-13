@@ -2,6 +2,7 @@ import cv2 as cv
 import logging
 import numpy as np
 
+from carpeta import extract_id
 from PIL import Image, ImageOps, ImageDraw
 
 from .measure import Size
@@ -22,11 +23,14 @@ def _to_size(value: Size | float | int) -> Size:
 # def scale(image: Image.Image, /, ...) -> Image.Image:
 
 
-def inpaint(image: Image.Image, /, inpaint_size: Size | float | int, image_crop: Size | float | int = 0,
-            corner_radius: Size | float | int = 0, inpaint_radius: float | int = 12) -> Image.Image:
+def inpaint(image: Image.Image, /, inpaint_size: Size | float | int,
+            image_crop: Size | float | int = 0, corner_radius: Size | float | int = 0,
+            inpaint_radius: float | int = 12) -> Image.Image:
     logger = logging.getLogger('cartuli.processing')
-    # TODO: Add args dict and/or start trace extra
-    logger.debug(f"Start image {image} inpaint", extra={'trace': image})
+
+    trace_id = extract_id(image)
+
+    logger.debug(f"Start image {image} inpaint", extra={'trace': image, 'trace_id': trace_id})
 
     inpaint_size = _to_size(inpaint_size)
     image_crop = _to_size(image_crop)
@@ -39,7 +43,7 @@ def inpaint(image: Image.Image, /, inpaint_size: Size | float | int, image_crop:
         .crop((expand_crop.width, expand_crop.height,
                image.size[0] + expand_size*2 - expand_crop.width,
                image.size[1] + expand_size*2 - expand_crop.height))
-    logger.debug(f"Expand {image} image", extra={'trace': expanded_image})
+    logger.debug(f"Expand {image} image", extra={'trace': expanded_image, 'trace_id': trace_id})
 
     mask_image = Image.new('L', (image.size[0] + inpaint_size.width*2,
                                  image.size[1] + inpaint_size.height*2), color='white')
@@ -50,13 +54,13 @@ def inpaint(image: Image.Image, /, inpaint_size: Size | float | int, image_crop:
          mask_image.size[1] - inpaint_size.height - image_crop.height),
         fill='black', width=0, radius=max(corner_radius))
     # TUNE: Find a way to round with different vertical and horizontal values
-    logger.debug(f"Mask {image} image for inpainting", extra={'trace': mask_image})
+    logger.debug(f"Mask {image} image for inpainting", extra={'trace': mask_image, 'trace_id': trace_id})
 
     inpaint_image_cv = cv.inpaint(
         cv.cvtColor(np.array(expanded_image), cv.COLOR_RGB2BGR),
         np.array(mask_image), int(inpaint_radius), cv.INPAINT_NS)
     inpainted_image = Image.fromarray(cv.cvtColor(inpaint_image_cv, cv.COLOR_BGR2RGB))
-    logger.debug(f"Inpaint {image} image", extra={'trace': inpainted_image})
+    logger.debug(f"Inpaint {image} image", extra={'trace': inpainted_image, 'trace_id': trace_id})
 
     return inpainted_image
 
@@ -94,8 +98,10 @@ def _discard_outliers(data: np.ndarray | list, iqr_scale: float = 1.5) -> np.nda
 
 def straighten(image: Image.Image, /, outliers_iqr_scale: float = 0.01) -> Image.Image:
     logger = logging.getLogger('cartuli.processing')
-    # TODO: Add args dict and/or start trace extra
-    logger.debug(f"Start {image} image straighten", extra={'trace': image})
+
+    trace_id = extract_id(image)
+
+    logger.debug(f"Start {image} image straighten", extra={'trace': image, 'trace_id': trace_id})
 
     # Apply Canny edge detection an detect linkes using Hought Line Transform
     gray_image = cv.cvtColor(np.array(image), cv.COLOR_RGB2GRAY)
@@ -117,25 +123,28 @@ def straighten(image: Image.Image, /, outliers_iqr_scale: float = 0.01) -> Image
         if line_angles[line] not in angles:
             color = "red"
         image_lines_draw.line((line[0:2], line[2:4]), fill=color, width=2)
-    logger.debug(f"Calculate {image} image lines", extra={'trace': image_lines})
+    logger.debug(f"Calculate {image} image lines", extra={'trace': image_lines, 'trace_id': trace_id})
 
     # Calculate the average angle of the detected lines and rotate image
     rotation_angle = -np.mean(angles)
     rotated_image = image.rotate(rotation_angle, expand=False)
-    logger.debug(f"Rotate {image} image", extra={'trace': rotated_image})
+    logger.debug(f"Rotate {image} image", extra={'trace': rotated_image, 'trace_id': trace_id})
 
     # TUNE: Maybe new content generated after rotation should be inpainted
 
     return rotated_image
 
 
-def crop(image: Image.Image, /, size: Size | float | int = 5) -> Image.Image:
+def crop(image: Image.Image, /,
+         size: Size | float | int = 5) -> Image.Image:
     logger = logging.getLogger('cartuli.processing')
 
-    logger.debug(f"Start {image} image crop", extra={'trace': image})
+    trace_id = extract_id(image)
+
+    logger.debug(f"Start {image} image crop", extra={'trace': image, 'trace_id': trace_id})
     crop_size = _to_size(size)
     crop_box = (crop_size.width, crop_size.height, image.width - crop_size.width, image.height - crop_size.height)
     crop_image = image.crop(crop_box)
-    logger.debug(f"Crop {image}", extra={'trace': crop_image})
+    logger.debug(f"Crop {image}", extra={'trace': crop_image, 'trace_id': trace_id})
 
     return crop_image

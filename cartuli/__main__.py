@@ -6,7 +6,7 @@ import os
 import re
 import sys
 
-from carpeta import Tracer, ImageHandler, trace_output
+from carpeta import ProcessTracer, ImageHandler, trace_output
 from pathlib import Path
 
 from .definition import Definition
@@ -33,7 +33,7 @@ def main(args=None):
     """Execute main package command line functionality."""
     args = parse_args()
 
-    tracer = Tracer()
+    tracer = ProcessTracer()
 
     # Logging
     if args.verbose < 3:
@@ -50,7 +50,7 @@ def main(args=None):
     if args.trace_output:
         processing_logger = logging.getLogger('cartuli.processing')
         processing_logger.setLevel(logging.DEBUG)
-        processing_handler = ImageHandler(tracer)
+        processing_handler = ImageHandler(tracer.remote_tracer)
         processing_handler.setLevel(logging.DEBUG)
         processing_logger.addHandler(processing_handler)
 
@@ -78,6 +78,8 @@ def main(args=None):
 
     if tracer:
         trace_output(tracer, args.trace_output)
+
+    tracer.wait_and_stop()
 
     return 0
 

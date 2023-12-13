@@ -18,6 +18,8 @@ from .measure import Size, from_str
 from .sheet import Sheet
 
 
+_CONCURRENT_PROCESSES = cpu_count() - 1
+
 CardsFilter = Callable[[Path], bool]
 
 
@@ -83,7 +85,7 @@ class Definition:
         image_filter = images_definition.get('filter', '')
         image_files = sorted(glob(images_definition['images']))
         logger.debug(f"Found {len(image_files)} {side} images for '{deck_name}' deck")
-        with Pool(processes=cpu_count() - 1) as pool:
+        with Pool(processes=_CONCURRENT_PROCESSES) as pool:
             images = pool.map(
                 self.filters[image_filter].apply,
                 (CardImage(
@@ -111,6 +113,7 @@ class Definition:
                 if len(front_images) != len(back_images):
                     raise DefinitionError(f"The number of front ({len(front_images)}) and "
                                           f"back ({len(back_images)}) images must be the same")
+                # TODO Allow all back images to be filtered without errors
                 cards = [Card(front_image, back_image) for front_image, back_image in zip(front_images, back_images)]
             else:
                 cards = [Card(image) for image in front_images]
@@ -123,15 +126,18 @@ class Definition:
         default_back = None
         if 'default_back' in definition:
             default_back_file = definition['default_back']['image']
-            default_back_filter = definition['default_back'].get('filter', '')
-            default_back = self.filters[default_back_filter].apply(
-                CardImage(
-                    default_back_file,
-                    size=size,
-                    bleed=from_str(definition['default_back'].get('bleed', str(CardImage.DEFAULT_BLEED))),
-                    name=Path(default_back_file).stem
+            if self.__cards_filter(default_back_file):
+                default_back_filter = definition['default_back'].get('filter', '')
+                default_back = self.filters[default_back_filter].apply(
+                    CardImage(
+                        default_back_file,
+                        size=size,
+                        bleed=from_str(definition['default_back'].get('bleed', str(CardImage.DEFAULT_BLEED))),
+                        name=Path(default_back_file).stem
+                    )
                 )
-            )
+            else:
+                logger.debug(f"Default back image '{default_back_file}' filtered for '{name}' deck")
 
         return Deck(cards, name=name, default_back=default_back, size=size)
 
