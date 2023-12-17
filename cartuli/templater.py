@@ -11,6 +11,8 @@ from PIL import Image
 from typing import Iterable
 
 
+DEFAULT_SVG_DPI = 300
+
 TemplateContent = str
 ParameterKey = str
 ParameterValue = Image.Image | str
@@ -48,8 +50,25 @@ def _get_template_image(image_element: etree._Element, encoding: str = 'UTF-8') 
     return Image.open(io.BytesIO(base64.b64decode(base64_image)))
 
 
+# TUNE: Probably this should not be implemented here
+def svg_file_to_image(svg_file: str | Path, dpi: int = DEFAULT_SVG_DPI) -> Image.Image:
+    if isinstance(svg_file, str):
+        svg_file = Path(svg_file)
+
+    image_data = svg2png(bytestring=svg_file.read_bytes(), dpi=dpi)
+
+    return Image.open(io.BytesIO(image_data))
+
+
+def svg_content_to_image(svg_content: str, dpi: int = DEFAULT_SVG_DPI) -> Image.Image:
+    image_data = svg2png(bytestring=svg_content, dpi=dpi)
+
+    return Image.open(io.BytesIO(image_data))
+
+
 class SVGTemplate:
-    def __init__(self, template: TemplateContent | etree._Element, parameters: Iterable[ParameterKey]):
+    def __init__(self, template: TemplateContent | etree._Element, parameters: Iterable[ParameterKey],
+                 dpi: int = DEFAULT_SVG_DPI):
         if not parameters:
             raise ValueError("A template withoyt parameters does not make any sense")
 
@@ -72,10 +91,15 @@ class SVGTemplate:
                 raise ValueError(f"Parameter '{parameter}' element '{element.tag}' is unsupported")
 
         self.__parameters = parameters
+        self.__dpi = dpi
 
     @property
     def parameters(self) -> dict[ParameterKey, type]:
         return self.__parameters.copy()
+
+    @property
+    def dpi(self) -> int:
+        return self.__dpi
 
     @classmethod
     def from_file(cls, template_file: str | Path, parameters: Iterable[ParameterKey]) -> SVGTemplate:
@@ -111,9 +135,7 @@ class SVGTemplate:
     def create_image(self, parameters: dict[ParameterKey, ParameterValue]) -> Image.Image:
         svg_content = self.apply_parameters(parameters)
 
-        image_data = svg2png(bytestring=svg_content)
-
-        return Image.open(io.BytesIO(image_data))
+        return svg_content_to_image(svg_content, dpi=self.__dpi)
 
     def get_values(self, content: TemplateContent | etree._Element,
                    parameters: tuple(ParameterKey) = None) -> dict[ParameterKey, ParameterValue]:

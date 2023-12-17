@@ -10,12 +10,14 @@ from glob import glob
 from itertools import chain, groupby
 from multiprocessing import Pool, cpu_count
 from pathlib import Path
+from PIL import Image
 
 from .card import CardImage, Card
 from .deck import Deck
 from .filters import Filter, NullFilter, from_dict as filter_from_dict
 from .measure import Size, from_str
 from .sheet import Sheet
+from .templater import svg_file_to_image
 
 
 _CONCURRENT_PROCESSES = cpu_count() - 1
@@ -25,6 +27,17 @@ CardsFilter = Callable[[Path], bool]
 
 class DefinitionError(Exception):
     pass
+
+
+def _load_image(image_file: str | Path) -> Image.Image:
+    # TUNE: I am tired of writting this and probably image_file = Path(image_file) will do the trick
+    if isinstance(image_file, str):
+        image_file = Path(image_file)
+
+    if image_file.suffix == '.svg':
+        return svg_file_to_image(image_file)
+    else:
+        return Image.open(image_file)
 
 
 class Definition:
@@ -79,7 +92,8 @@ class Definition:
 
         return self.__decks
 
-    def _load_images(self, images_definition: dict, size: Size, deck_name: str, side: str = 'front') -> list[CardImage]:
+    def _load_images(self, images_definition: dict, size: Size,
+                     deck_name: str, side: str = 'front') -> list[CardImage]:
         logger = logging.getLogger('cartuli.definition.Definition.decks')
 
         image_filter = images_definition.get('filter', '')
@@ -89,7 +103,7 @@ class Definition:
             images = pool.map(
                 self.filters[image_filter].apply,
                 (CardImage(
-                    path, size=size,
+                    _load_image(path), size=size,
                     bleed=from_str(images_definition.get('bleed', str(CardImage.DEFAULT_BLEED))),
                     name=Path(path).stem
                 ) for path in image_files if self.__cards_filter(path))
@@ -130,7 +144,7 @@ class Definition:
                 default_back_filter = definition['default_back'].get('filter', '')
                 default_back = self.filters[default_back_filter].apply(
                     CardImage(
-                        default_back_file,
+                        _load_image(default_back_file),
                         size=size,
                         bleed=from_str(definition['default_back'].get('bleed', str(CardImage.DEFAULT_BLEED))),
                         name=Path(default_back_file).stem

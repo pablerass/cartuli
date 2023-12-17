@@ -9,7 +9,7 @@ from .sheet import Sheet
 from .output import sheet_output, sheet_pdf_output
 from .filters import MultipleFilter, StraightenFilter, InpaintFilter, CropFilter
 from .processing import inpaint, straighten, crop
-from .templater import SVGTemplate
+from .templater import SVGTemplate, svg_file_to_image, svg_content_to_image
 from .definition import Definition, DefinitionError
 
 
@@ -27,6 +27,6 @@ __all__ = [
     sheet_output, sheet_pdf_output,
     MultipleFilter, StraightenFilter, InpaintFilter, CropFilter,
     inpaint, straighten, crop,
-    SVGTemplate,
+    SVGTemplate, svg_file_to_image, svg_content_to_image,
     Definition, DefinitionError
 ]
