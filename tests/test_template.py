@@ -2,19 +2,19 @@ import pytest
 
 from PIL import ImageChops
 
-from cartuli.templater import SVGTemplate
+from cartuli.template import Template
 
 
-def test_templater(fixture_content, random_image):
+def test_template(fixture_content, random_image):
     template_content = fixture_content("template.svg")
 
     with pytest.raises(ValueError):
-        SVGTemplate(template_content, [])
+        Template(template_content, [])
 
     with pytest.raises(ValueError):
-        SVGTemplate(template_content, ('name', 'image'))
+        Template(template_content, ('name', 'image'))
 
-    template = SVGTemplate(template_content, ('image', 'text'))
+    template = Template(template_content, ('image', 'text'))
 
     parameters = {
         'text': 'otro_texto',
@@ -28,3 +28,11 @@ def test_templater(fixture_content, random_image):
     rgb_parameter_image = parameters['image'].convert('RGB')
     rgb_content_image = content_values['image'].convert('RGB')
     assert not ImageChops.difference(rgb_parameter_image, rgb_content_image).getbbox()
+
+
+# TODO: Make this tests work
+# def test_template_from_file(fixture_content, fixture_file):
+#     template_content = fixture_content("template.svg")
+#     parameters = ('text', 'image')
+#
+#     assert Template(template_content, parameters) == Template.from_file(fixture_file("template.svg"), parameters)

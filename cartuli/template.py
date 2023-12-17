@@ -66,13 +66,13 @@ def svg_content_to_image(svg_content: str, dpi: int = DEFAULT_SVG_DPI) -> Image.
     return Image.open(io.BytesIO(image_data))
 
 
-class SVGTemplate:
+class Template:
     def __init__(self, template: TemplateContent | etree._Element, parameters: Iterable[ParameterKey],
                  dpi: int = DEFAULT_SVG_DPI):
         if not parameters:
             raise ValueError("A template withoyt parameters does not make any sense")
 
-        if isinstance(template, etree._Element):
+        if isinstance(template, etree._ElementTree):
             self.__xml_tree = template
             self.__encoding = self.__xml_tree.docinfo.encoding
         else:
@@ -90,19 +90,23 @@ class SVGTemplate:
             if not (element.tag.endswith('image') or element.tag.endswith('text')):
                 raise ValueError(f"Parameter '{parameter}' element '{element.tag}' is unsupported")
 
-        self.__parameters = parameters
+        self.__parameters = tuple(parameters)
         self.__dpi = dpi
 
     @property
+    def _xml_tree(self) -> etree._ElementTree:
+        return self.__xml_tree
+
+    @property
     def parameters(self) -> dict[ParameterKey, type]:
-        return self.__parameters.copy()
+        return deepcopy(self.__parameters)
 
     @property
     def dpi(self) -> int:
         return self.__dpi
 
     @classmethod
-    def from_file(cls, template_file: str | Path, parameters: Iterable[ParameterKey]) -> SVGTemplate:
+    def from_file(cls, template_file: str | Path, parameters: Iterable[ParameterKey]) -> Template:
         if isinstance(template_file, str):
             template_file = Path(template_file)
 
@@ -142,7 +146,7 @@ class SVGTemplate:
         if parameters is None:
             parameters = tuple(self.__parameters)
 
-        if isinstance(content, etree._Element):
+        if isinstance(content, etree._ElementTree):
             content_tree = content
         else:
             content_tree = etree.fromstring(bytes(content))
@@ -176,3 +180,12 @@ class SVGTemplate:
             content_file = Path(content_file)
 
         return self.get_values(content_file.read_text(), parameters)
+
+    def __eq__(self, other: Template) -> bool:
+        return (self._xml_tree == other._xml_tree and
+                self.parameters == other.parameters)
+
+
+def from_dict(template_dict: dict) -> Template:
+    # TUNE: It is strange that the definition contains also the values but here are not used at all
+    return Template.from_file(template_dict['definition'], template_dict['parameters'].keys())

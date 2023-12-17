@@ -1,6 +1,6 @@
 import pytest
 
-from cartuli.definition import Definition
+from cartuli.definition import Definition, _convert_dict_of_lists_to_list_of_dicts
 from cartuli.filters import NullFilter, InpaintFilter
 from cartuli.measure import Size, STANDARD, A4, mm
 
@@ -107,3 +107,15 @@ def test_definition(random_image_file):
 def test_filters(random_image_file):
     # TODO: Implement filters testing
     pass
+
+
+def test_convert_dict_of_lists_to_list_of_dicts():
+    assert _convert_dict_of_lists_to_list_of_dicts({
+        'a': [1, 2, 3, 4],
+        'b': [5, 6, 7, 8]
+    }) == [
+        {'a': 1, 'b': 5},
+        {'a': 2, 'b': 6},
+        {'a': 3, 'b': 7},
+        {'a': 4, 'b': 8},
+    ]
