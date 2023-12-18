@@ -184,8 +184,3 @@ class Template:
     def __eq__(self, other: Template) -> bool:
         return (self._xml_tree == other._xml_tree and
                 self.parameters == other.parameters)
-
-
-def from_dict(template_dict: dict) -> Template:
-    # TUNE: It is strange that the definition contains also the values but here are not used at all
-    return Template.from_file(template_dict['definition'], template_dict['parameters'].keys())

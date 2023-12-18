@@ -18,20 +18,22 @@ from .deck import Deck
 from .filters import Filter, NullFilter, from_dict as filter_from_dict
 from .measure import Size, from_str as measure_from_str
 from .sheet import Sheet
-from .template import svg_file_to_image, from_dict as template_from_dict
+from .template import Template, svg_file_to_image
 
 
 _CONCURRENT_PROCESSES = cpu_count() - 1
 
-CardsFilter = Callable[[Path], bool]
+
+FilesFilter = Callable[[Path], bool]
 
 
 class DefinitionError(Exception):
     pass
 
 
-# TUNE; Certain names should just not be written at certain hours
+# TUNE: Certain names should just not be written at certain hours
 def _convert_dict_of_lists_to_list_of_dicts(dict_of_lists: dict) -> Iterable:
+    # TODO: Make this fail if the lenghts are different
     list_of_dicts = []
 
     keys = list(dict_of_lists.keys())
@@ -61,21 +63,24 @@ class Definition:
 
     DEFAULT_CARTULIFILE = 'Cartulifile.yml'
 
-    def __init__(self, values: dict, /, cards_filter: CardsFilter = None):
+    def __init__(self, values: dict, /, files_filter: FilesFilter = None):
         self.__values = Definition._validate(values)
         self.__decks = None
         self.__sheets = None
 
-        if cards_filter is None:
-            cards_filter = lambda x: True   # noqa: E731
-        self.__cards_filter = cards_filter
+        if files_filter is None:
+            files_filter = lambda x: True   # noqa: E731
+        self.__files_filter = files_filter
+
+        self.__filters = None
+        self.__template_parameters = None
 
     @property
     def _values(self) -> dict:
         return self.__values
 
     @classmethod
-    def from_file(cls, path: Path | str = 'Cartulifile.yml', /, cards_filter: CardsFilter = None) -> Definition:
+    def from_file(cls, path: Path | str = 'Cartulifile.yml', /, files_filter: FilesFilter = None) -> Definition:
         if isinstance(path, str):
             path = Path(path)
         if not isinstance(path, Path):
@@ -85,7 +90,7 @@ class Definition:
             path = path / cls.DEFAULT_CARTULIFILE
 
         with path.open(mode='r') as file:
-            return cls(yaml.safe_load(file), cards_filter)
+            return cls(yaml.safe_load(file), files_filter)
 
     def _validate(values: dict) -> dict:
         # TODO: Implement validation
@@ -109,13 +114,20 @@ class Definition:
         return self.__decks
 
     def _load_template(self, template_definition: dict) -> tuple[list[Path], list[Image.Image]]:
-        # TODO: Support text values
-        template = template_from_dict(template_definition)
+        # TODO: Add support for text parameters
+        if isinstance(template_definition['parameters'], str):
+            parameters_definition = self._template_parameters[template_definition['parameters']]
+        else:
+            parameters_definition = template_definition['parameters']
+
+        template = Template.from_file(template_definition['definition'],
+                                      parameters_definition.keys())
+
         parameter_values = {}
         template_files = []
         for parameter in template.parameters:
             # TODO: Could make sense to add filters in this step?
-            image_files = sorted(glob(template_definition['parameters'][parameter]))
+            image_files = sorted(glob(parameters_definition[parameter]))
             parameter_values |= {
                 parameter: [_load_image(image_file) for image_file in image_files]
             }
@@ -136,13 +148,13 @@ class Definition:
         image_filter = images_definition.get('filter', '')
         if 'images' in images_definition:
             image_files = sorted(glob(images_definition['images']))
-            images = [_load_image(file) for file in image_files if self.__cards_filter(file)]
+            images = [_load_image(file) for file in image_files if self.__files_filter(file)]
         elif 'template' in images_definition:
             image_files, images = self._load_template(images_definition['template'])
         logger.debug(f"Found {len(images)} {side} images for '{deck_name}' deck")
         with Pool(processes=_CONCURRENT_PROCESSES) as pool:
             card_images = pool.map(
-                self.filters[image_filter].apply,
+                self._filters[image_filter].apply,
                 (CardImage(
                     image, size=size,
                     bleed=measure_from_str(images_definition.get('bleed', str(CardImage.DEFAULT_BLEED))),
@@ -186,9 +198,9 @@ class Definition:
             elif 'template' in definition['default_back']:
                 default_back_file, default_back_image = self._load_template(definition['template'])
 
-            if self.__cards_filter(default_back_file):
+            if self.__files_filter(default_back_file):
                 default_back_filter = definition['default_back'].get('filter', '')
-                default_back = self.filters[default_back_filter].apply(
+                default_back = self._filters[default_back_filter].apply(
                     CardImage(
                         default_back_image,
                         size=size,
@@ -230,10 +242,17 @@ class Definition:
         return self.__sheets
 
     @property
-    def filters(self) -> dict[str, Filter]:
-        filters = defaultdict(NullFilter)
+    def _template_parameters(self) -> dict[str, dict]:
+        self.__template_parameters = self._values.get('template_parameters', {})
 
-        for name, filter_definition in self._values.get('filters', {}).items():
-            filters[name] = filter_from_dict(filter_definition)
+        return self.__template_parameters
 
-        return filters
+    @property
+    def _filters(self) -> dict[str, Filter]:
+        if self.__filters is None:
+            self.__filters = defaultdict(NullFilter)
+
+            for name, filter_definition in self._values.get('filters', {}).items():
+                self.__filters[name] = filter_from_dict(filter_definition)
+
+        return self.__filters

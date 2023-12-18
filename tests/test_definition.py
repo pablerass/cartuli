@@ -51,6 +51,22 @@ def test_decks_definition():
     assert definition.decks[1].size == Size(44*mm, 75*mm)
 
 
+def test_template_parameters_definition():
+    definition_dict = {
+        'template_parameters': {
+            'name': {
+                'key1': "value1",
+                'key2': "value2"
+            }
+        }
+    }
+    definition = Definition(definition_dict)
+    assert definition._template_parameters['name'] == {
+        'key1': "value1",
+        'key2': "value2"
+    }
+
+
 def test_filters_definition():
     definition_dict = {
         'filters': {
@@ -60,8 +76,8 @@ def test_filters_definition():
         }
     }
     definition = Definition(definition_dict)
-    assert definition.filters['front'] == InpaintFilter()
-    assert definition.filters['back'] == NullFilter()
+    assert definition._filters['front'] == InpaintFilter()
+    assert definition._filters['back'] == NullFilter()
 
 
 def test_definition(random_image_file):
