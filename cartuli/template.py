@@ -93,6 +93,10 @@ class Template:
         self.__parameters = tuple(parameters)
         self.__dpi = dpi
 
+    @staticmethod
+    def from_dict(definition: dict) -> Template:
+        pass
+
     @property
     def _xml_tree(self) -> etree._ElementTree:
         return self.__xml_tree

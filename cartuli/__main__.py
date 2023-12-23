@@ -65,7 +65,7 @@ def main(args=None):
     files_filter = None
     if args.cards is not None:
         files_regex = re.compile(r'^.*(' + '|'.join(args.cards) + r').*$')
-        files_filter = lambda x: files_regex.match(x)   # noqa: E731
+        files_filter = lambda x: not files_regex.match(x)   # noqa: E731
 
     definition = Definition.from_file(args.definition_file, files_filter=files_filter)
     logger.info(f"Loaded {args.definition_file} with {len(definition.decks)} decks")

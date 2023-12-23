@@ -15,10 +15,10 @@ from typing import Iterable
 
 from .card import CardImage, Card
 from .deck import Deck
-from .filters import Filter, NullFilter, from_dict as filter_from_dict
+from .filters import Filter, NullFilter
 from .measure import Size, from_str as measure_from_str
 from .sheet import Sheet
-from .template import Template, svg_file_to_image
+from .template import svg_file_to_image
 
 
 _CONCURRENT_PROCESSES = cpu_count() - 1
@@ -29,6 +29,46 @@ FilesFilter = Callable[[Path], bool]
 
 class DefinitionError(Exception):
     pass
+
+
+def _load_image(image_file: str | Path) -> tuple(Image.Image, Path):
+    image_file = Path(image_file)
+
+    if image_file.suffix == '.svg':
+        return svg_file_to_image(image_file), image_file
+    else:
+        return Image.open(image_file), image_file
+
+
+# def _load_template_images(template: Template, parameters_definition: dict) -> tuple[list[Path], list[Image.Image]]:
+#     # TODO: Add support for text parameters
+#     parameters_definition = template_definition['parameters']
+#
+#     if isinstance(parameters_definition, str):
+#         if parameters_definition in self._template_parameters:
+#             parameters_definition = self._template_parameters[template_definition['parameters']]
+#         elif Path(parameters_definition).exists:
+#             pass
+#         else:
+#             ValueError(f'Invalid parameters definition in template {template_definition}')
+#
+#     parameter_values = {}
+#     template_files = []
+#     for parameter in template.parameters:
+#         # TODO: Could make sense to add filters in this step?
+#         image_files = sorted(glob(parameters_definition[parameter]))
+#         parameter_values |= {
+#             parameter: [_load_image(image_file) for image_file in image_files]
+#         }
+#         if not template_files:
+#             template_files = image_files
+#
+#     images = [
+#         template.create_image(parameters)
+#         for parameters in _convert_dict_of_lists_to_list_of_dicts(parameter_values)
+#     ]
+#
+#     return image_files, images
 
 
 # TUNE: Certain names should just not be written at certain hours
@@ -47,17 +87,6 @@ def _convert_dict_of_lists_to_list_of_dicts(dict_of_lists: dict) -> Iterable:
     return list_of_dicts
 
 
-def _load_image(image_file: str | Path) -> Image.Image:
-    # TUNE: I am tired of writting this and probably image_file = Path(image_file) will do the trick
-    if isinstance(image_file, str):
-        image_file = Path(image_file)
-
-    if image_file.suffix == '.svg':
-        return svg_file_to_image(image_file)
-    else:
-        return Image.open(image_file)
-
-
 class Definition:
     """Definition."""
 
@@ -69,7 +98,7 @@ class Definition:
         self.__sheets = None
 
         if files_filter is None:
-            files_filter = lambda x: True   # noqa: E731
+            files_filter = lambda x: False   # noqa: E731
         self.__files_filter = files_filter
 
         self.__filters = None
@@ -99,119 +128,92 @@ class Definition:
 
         return values
 
-    @property
-    def decks(self) -> list[Deck]:
-        # TUNE: This code is crap, should be refacored
-        logger = logging.getLogger('cartuli.definition.Definition.decks')
-        if self.__decks is None:
-            self.__decks = []
-            for name, deck_definition in self.__values.get('decks', {}).items():
-                logger.debug(f"Deck '{name}' definition {deck_definition}")
-                self.__decks.append(self._load_deck(deck_definition, name))
-            if not self.__decks:
-                logger.warning('No decks loaded in definition')
+    def _load_images(self, definition: dict) -> tuple[tuple[Image.Image], Path]:
+        if 'image' in definition:
+            return [_load_image(definition['image'])]
+        elif 'images' in definition:
+            return [_load_image(i) for i in sorted(glob(definition['images']))]
+        # elif 'template' in definition:
+        #   image_files, images = self._load_template_images(definition['template'])
+        #   return zip(images, image_files)
 
-        return self.__decks
+        raise ValueError(f"Invalid image definition {definition}")
 
-    def _load_template(self, template_definition: dict) -> tuple[list[Path], list[Image.Image]]:
-        # TODO: Add support for text parameters
-        if isinstance(template_definition['parameters'], str):
-            parameters_definition = self._template_parameters[template_definition['parameters']]
+    def _load_filter(self, definition: dict) -> Filter:
+        if isinstance(definition, str):
+            return self._filters[definition]
         else:
-            parameters_definition = template_definition['parameters']
+            Filter.from_dict(definition)
 
-        template = Template.from_file(template_definition['definition'],
-                                      parameters_definition.keys())
+    def _load_card_images(self, definition: dict, size: Size) -> tuple[CardImage]:
+        logger = logging.getLogger('cartuli.definition.Definition._load_card_images')
 
-        parameter_values = {}
-        template_files = []
-        for parameter in template.parameters:
-            # TODO: Could make sense to add filters in this step?
-            image_files = sorted(glob(parameters_definition[parameter]))
-            parameter_values |= {
-                parameter: [_load_image(image_file) for image_file in image_files]
-            }
-            if not template_files:
-                template_files = image_files
-
-        images = [
-            template.create_image(parameters)
-            for parameters in _convert_dict_of_lists_to_list_of_dicts(parameter_values)
+        images = self._load_images(definition)
+        filtered_images = [
+            (image, image_path) for image, image_path in images if not self.__files_filter(str(image_path))
         ]
+        if len(images) != len(filtered_images):
+            logger.debug(f"'{definition}' images filterd from {len(images)} to {len(filtered_images)}")
 
-        return image_files, images
+        image_filter = NullFilter()
+        if 'filter' in definition:
+            image_filter = self._load_filter(definition['filter'])
 
-    def _load_images(self, images_definition: dict, size: Size,
-                     deck_name: str, side: str = 'front') -> list[CardImage]:
-        logger = logging.getLogger('cartuli.definition.Definition.decks')
-
-        image_filter = images_definition.get('filter', '')
-        if 'images' in images_definition:
-            image_files = sorted(glob(images_definition['images']))
-            images = [_load_image(file) for file in image_files if self.__files_filter(file)]
-        elif 'template' in images_definition:
-            image_files, images = self._load_template(images_definition['template'])
-        logger.debug(f"Found {len(images)} {side} images for '{deck_name}' deck")
         with Pool(processes=_CONCURRENT_PROCESSES) as pool:
             card_images = pool.map(
-                self._filters[image_filter].apply,
+                image_filter.apply,
                 (CardImage(
-                    image, size=size,
-                    bleed=measure_from_str(images_definition.get('bleed', str(CardImage.DEFAULT_BLEED))),
-                    name=Path(file).stem
-                ) for image, file in zip(images, image_files))
+                    image,
+                    size=size,
+                    bleed=measure_from_str(definition.get('bleed', str(CardImage.DEFAULT_BLEED))),
+                    name=image_path.stem
+                ) for image, image_path in filtered_images)
             )
-        if len(image_files) != len(images):
-            logger.debug(f"{side.capitalize()} images filterd from {len(image_files)} to "
-                         f" {len(images)} for '{deck_name}' deck")
 
-        return card_images
+        return tuple(card_images)
 
-    def _load_deck(self, definition: dict, name: str) -> Deck:
-        logger = logging.getLogger('cartuli.definition.Definition.decks')
+    def _load_cards(self, definition: dict, size: Size) -> tuple[Card]:
+        if 'front' not in definition:
+            raise ValueError("Cards definition must have a front image")
+        front_images = self._load_card_images(definition['front'], size)
 
+        back_images = None
+        if 'back' in definition:
+            back_images = self._load_card_images(definition['back'], size)
+            if len(front_images) != len(back_images):
+                raise ValueError(f"The number of front ({len(front_images)}) and back ({len(back_images)}) images "
+                                 f"must be the same in cards definition")
+            return [Card(front_image, back_image, size=size)
+                    for front_image, back_image in zip(front_images, back_images)]
+
+        return [Card(image, size=size) for image in front_images]
+
+    def _load_deck(self, definition: dict, /, name: str = '') -> Deck:
+        if 'size' not in definition:
+            raise ValueError("No size defined for deck")
         size = Size.from_str(definition['size'])
-        cards = []
-
-        if 'front' in definition:
-            front_images = self._load_images(definition['front'], size, name, 'front')
-            if 'back' in definition:
-                back_images = self._load_images(definition['back'], size, name, 'back')
-                if len(front_images) != len(back_images):
-                    raise DefinitionError(f"The number of front ({len(front_images)}) and "
-                                          f"back ({len(back_images)}) images must be the same")
-                # TODO Allow all back images to be filtered without errors
-                cards = [Card(front_image, back_image) for front_image, back_image in zip(front_images, back_images)]
-            else:
-                cards = [Card(image) for image in front_images]
-
-        if not cards:
-            logger.warning(f"No cards found for deck {name} with specified fiters")
+        cards = self._load_cards(definition, size)
 
         cards = cards * definition.get('copies', 1)
 
         default_back = None
         if 'default_back' in definition:
-            if 'image' in definition['default_back']:
-                default_back_file = definition['default_back']['image']
-                default_back_image = _load_image(default_back_file)
-            elif 'template' in definition['default_back']:
-                default_back_file, default_back_image = self._load_template(definition['template'])
+            default_back = self._load_card_images(definition['default_back'], size)[0]
 
-            if self.__files_filter(default_back_file):
-                default_back_filter = definition['default_back'].get('filter', '')
-                default_back = self._filters[default_back_filter].apply(
-                    CardImage(
-                        default_back_image,
-                        size=size,
-                        bleed=measure_from_str(definition['default_back'].get('bleed', str(CardImage.DEFAULT_BLEED))),
-                        name=Path(default_back_file).stem
-                    )
-                )
-            else:
-                logger.debug(f"Default back image '{default_back_file}' filtered for '{name}' deck")
+        return Deck(cards, name=name, size=size, default_back=default_back)
 
-        return Deck(cards, name=name, default_back=default_back, size=size)
+    @property
+    def decks(self) -> list[Deck]:
+        logger = logging.getLogger('cartuli.definition.Definition.decks')
+        if self.__decks is None:
+            self.__decks = []
+            for name, definition in self.__values.get('decks', {}).items():
+                logger.debug(f"Deck '{name}' definition {definition}")
+                self.__decks.append(self._load_deck(definition, name))
+            if not self.__decks:
+                logger.warning('No decks loaded in definition')
+
+        return self.__decks
 
     @property
     def sheets(self) -> dict[tuple[str], Sheet]:
@@ -253,6 +255,6 @@ class Definition:
             self.__filters = defaultdict(NullFilter)
 
             for name, filter_definition in self._values.get('filters', {}).items():
-                self.__filters[name] = filter_from_dict(filter_definition)
+                self.__filters[name] = Filter.from_dict(filter_definition)
 
         return self.__filters

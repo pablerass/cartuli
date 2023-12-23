@@ -37,10 +37,16 @@ def test_decks_definition():
     definition_dict = {
         'decks': {
             'cards': {
-                'size': 'STANDARD'
+                'size': 'STANDARD',
+                'front': {
+                    'images': "cards/*.png"
+                },
             },
             'tokens': {
-                'size': '(44*mm,75*mm)'
+                'size': '(44*mm,75*mm)',
+                'front': {
+                    'images': "tokens/*.png"
+                },
             }
         }
     }
