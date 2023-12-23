@@ -6,6 +6,7 @@ import yaml
 
 from collections import defaultdict
 from collections.abc import Callable
+from copy import deepcopy
 from glob import glob
 from itertools import chain, groupby
 from multiprocessing import Pool, cpu_count
@@ -18,7 +19,7 @@ from .deck import Deck
 from .filters import Filter, NullFilter
 from .measure import Size, from_str as measure_from_str
 from .sheet import Sheet
-from .template import svg_file_to_image
+from .template import svg_file_to_image, Template, ParameterKey, ParameterValue
 
 
 _CONCURRENT_PROCESSES = cpu_count() - 1
@@ -31,60 +32,67 @@ class DefinitionError(Exception):
     pass
 
 
-def _load_image(image_file: str | Path) -> tuple(Image.Image, Path):
+def _load_image(image_file: str | Path) -> Image.Image:
     image_file = Path(image_file)
 
     if image_file.suffix == '.svg':
-        return svg_file_to_image(image_file), image_file
+        image = svg_file_to_image(image_file)
+        image.filename = image_file
+        return image
     else:
-        return Image.open(image_file), image_file
+        return Image.open(image_file)
 
 
-# def _load_template_images(template: Template, parameters_definition: dict) -> tuple[list[Path], list[Image.Image]]:
-#     # TODO: Add support for text parameters
-#     parameters_definition = template_definition['parameters']
-#
-#     if isinstance(parameters_definition, str):
-#         if parameters_definition in self._template_parameters:
-#             parameters_definition = self._template_parameters[template_definition['parameters']]
-#         elif Path(parameters_definition).exists:
-#             pass
-#         else:
-#             ValueError(f'Invalid parameters definition in template {template_definition}')
-#
-#     parameter_values = {}
-#     template_files = []
-#     for parameter in template.parameters:
-#         # TODO: Could make sense to add filters in this step?
-#         image_files = sorted(glob(parameters_definition[parameter]))
-#         parameter_values |= {
-#             parameter: [_load_image(image_file) for image_file in image_files]
-#         }
-#         if not template_files:
-#             template_files = image_files
-#
-#     images = [
-#         template.create_image(parameters)
-#         for parameters in _convert_dict_of_lists_to_list_of_dicts(parameter_values)
-#     ]
-#
-#     return image_files, images
+class _TemplateParameters:
+    def __init__(self, parameters: Iterable[dict[ParameterKey, ParameterValue]]):
+        self.__parameters = parameters
 
+    @property
+    def parameters(self) -> list[dict[ParameterKey, ParameterValue]]:
+        return deepcopy(self.__parameters)
 
-# TUNE: Certain names should just not be written at certain hours
-def _convert_dict_of_lists_to_list_of_dicts(dict_of_lists: dict) -> Iterable:
-    # TODO: Make this fail if the lenghts are different
-    list_of_dicts = []
+    @property
+    def keys(self) -> list[ParameterKey]:
+        return list(self.__parameters[0].keys())
 
-    keys = list(dict_of_lists.keys())
+    @staticmethod
+    def _convert_dict_of_lists_to_list_of_dicts(dict_of_lists: dict) -> list:
+        # TODO: Make this fail if the lenghts are different
+        list_of_dicts = []
 
-    for item in range(len(dict_of_lists[keys[0]])):
-        item_dict = {}
-        for key in keys:
-            item_dict |= {key: dict_of_lists[key][item]}
-        list_of_dicts.append(item_dict)
+        keys = list(dict_of_lists.keys())
 
-    return list_of_dicts
+        for item in range(len(dict_of_lists[keys[0]])):
+            item_dict = {}
+            for key in keys:
+                item_dict |= {key: dict_of_lists[key][item]}
+            list_of_dicts.append(item_dict)
+
+        return list_of_dicts
+
+    @classmethod
+    def from_dict(cls, definition: dict | str) -> _TemplateParameters:
+        if isinstance(definition, str):
+            return  # TODO: Implement
+
+        parameter_values = {}
+        for parameter in definition.keys():
+            image_files = sorted(glob(definition[parameter]))
+            parameter_values |= {
+                parameter: [_load_image(image_file) for image_file in image_files]
+            }
+
+        return cls(cls._convert_dict_of_lists_to_list_of_dicts(parameter_values))
+
+    def create_images(self, template: Template, name_parameter: str = None) -> list[Image.Image]:
+        images = []
+        for parameters in self.__parameters:
+            image = template.create_image(parameters)
+            if name_parameter:
+                image.filename = parameters[name_parameter].filename
+            images.append(image)
+
+        return images
 
 
 class Definition:
@@ -112,6 +120,7 @@ class Definition:
     def from_file(cls, path: Path | str = 'Cartulifile.yml', /, files_filter: FilesFilter = None) -> Definition:
         if isinstance(path, str):
             path = Path(path)
+
         if not isinstance(path, Path):
             raise TypeError(f"{type(path)} is not a valid path")
 
@@ -128,29 +137,51 @@ class Definition:
 
         return values
 
-    def _load_images(self, definition: dict) -> tuple[tuple[Image.Image], Path]:
+    def _load_images(self, definition: dict) -> list[Image.Image]:
         if 'image' in definition:
             return [_load_image(definition['image'])]
         elif 'images' in definition:
             return [_load_image(i) for i in sorted(glob(definition['images']))]
-        # elif 'template' in definition:
-        #   image_files, images = self._load_template_images(definition['template'])
-        #   return zip(images, image_files)
+        elif 'template' in definition:
+            return self._load_template_images(definition['template'])
 
         raise ValueError(f"Invalid image definition {definition}")
+
+    def _load_template_parameters(self, definition: dict) -> _TemplateParameters:
+        if isinstance(definition, str):
+            definition = self._template_parameters[definition]
+
+        return _TemplateParameters.from_dict(definition)
+
+    def _load_template_images(self, definition: dict) -> list[Image.Image]:
+        if 'parameters' not in definition:
+            raise ValueError(f"Template definition must specify its parameters {definition}")
+
+        template_parameters = self._load_template_parameters(definition['parameters'])
+
+        if 'file' not in definition:
+            raise ValueError(f"Template definition must specify its file {definition}")
+
+        name_parameter = None
+        if 'name_parameter' in definition:
+            name_parameter = definition['name_parameter']
+
+        template = Template.from_file(definition['file'], template_parameters.keys)
+
+        return template_parameters.create_images(template, name_parameter)
 
     def _load_filter(self, definition: dict) -> Filter:
         if isinstance(definition, str):
             return self._filters[definition]
-        else:
-            Filter.from_dict(definition)
 
-    def _load_card_images(self, definition: dict, size: Size) -> tuple[CardImage]:
+        return Filter.from_dict(definition)
+
+    def _load_card_images(self, definition: dict, size: Size) -> list[CardImage]:
         logger = logging.getLogger('cartuli.definition.Definition._load_card_images')
 
         images = self._load_images(definition)
         filtered_images = [
-            (image, image_path) for image, image_path in images if not self.__files_filter(str(image_path))
+            image for image in images if not self.__files_filter(str(image.filename))
         ]
         if len(images) != len(filtered_images):
             logger.debug(f"'{definition}' images filterd from {len(images)} to {len(filtered_images)}")
@@ -166,13 +197,13 @@ class Definition:
                     image,
                     size=size,
                     bleed=measure_from_str(definition.get('bleed', str(CardImage.DEFAULT_BLEED))),
-                    name=image_path.stem
-                ) for image, image_path in filtered_images)
+                    name=Path(image.filename).stem
+                ) for image in filtered_images)
             )
 
         return tuple(card_images)
 
-    def _load_cards(self, definition: dict, size: Size) -> tuple[Card]:
+    def _load_cards(self, definition: dict, size: Size) -> list[Card]:
         if 'front' not in definition:
             raise ValueError("Cards definition must have a front image")
         front_images = self._load_card_images(definition['front'], size)
@@ -198,7 +229,8 @@ class Definition:
 
         default_back = None
         if 'default_back' in definition:
-            default_back = self._load_card_images(definition['default_back'], size)[0]
+            if default_back_images := self._load_card_images(definition['default_back'], size):
+                default_back = default_back_images[0]
 
         return Deck(cards, name=name, size=size, default_back=default_back)
 
