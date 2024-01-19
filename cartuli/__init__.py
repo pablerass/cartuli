@@ -13,7 +13,7 @@ from .template import Template, svg_file_to_image, svg_content_to_image
 from .definition import Definition, DefinitionError
 
 
-__version__ = "v0.1.0b2"
+__version__ = "v0.1.0b3"
 
 
 __all__ = [

@@ -4,7 +4,7 @@ from setuptools import setup
 
 setup(
     name='cartuli',
-    version='0.1.0b2',
+    version='0.1.0b3',
     description="A tool to create print and play card games",
     long_description=open('README.md').read(),
     classifiers=[
