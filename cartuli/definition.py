@@ -43,7 +43,23 @@ def _load_image(image_file: str | Path) -> Image.Image:
         return Image.open(image_file)
 
 
+def _load_text(text_file: str | Path) -> str:
+    text_file = Path(text_file)
+
+    if text_file.suffix == '.md':
+        # TODO: Implement convert markdown to supported svg content
+        pass
+
+    return text_file.read_text()
+
+
+# TODO: Implement load template parameters from yml or CSV file
 class _TemplateParameters:
+    EXTENSION_MAPPINGS = {
+        tuple(Image.registered_extensions()): _load_image,
+        tuple(['.txt', '.html', '.md']): _load_text
+    }
+
     def __init__(self, parameters: Iterable[dict[ParameterKey, ParameterValue]]):
         self.__parameters = parameters
 
@@ -71,15 +87,25 @@ class _TemplateParameters:
         return list_of_dicts
 
     @classmethod
+    def _load_parameter_from_file(cls, parameter_file: str | Path) -> ParameterValue:
+        file_extension = Path(parameter_file).suffix
+
+        for extensions, function in cls.EXTENSION_MAPPINGS.items():
+            if file_extension in extensions:
+                return function(parameter_file)
+
+        raise ValueError(f"Unmanageable extension for '{parameter_file}'")
+
+    @classmethod
     def from_dict(cls, definition: dict | str) -> _TemplateParameters:
         if isinstance(definition, str):
             return  # TODO: Implement
 
         parameter_values = {}
         for parameter in definition.keys():
-            image_files = sorted(glob(definition[parameter]))
+            files = sorted(glob(definition[parameter]))
             parameter_values |= {
-                parameter: [_load_image(image_file) for image_file in image_files]
+                parameter: [cls._load_parameter_from_file(file) for file in files]
             }
 
         return cls(cls._convert_dict_of_lists_to_list_of_dicts(parameter_values))
@@ -89,7 +115,11 @@ class _TemplateParameters:
         for parameters in self.__parameters:
             image = template.create_image(parameters)
             if name_parameter:
-                image.filename = parameters[name_parameter].filename
+                if isinstance(parameters[name_parameter], Image.Image):
+                    image.filename = parameters[name_parameter].filename
+                else:
+                    # TUNE: This does not work as expected for filters as this does not contains the file name
+                    image.filename = parameters[name_parameter]
             images.append(image)
 
         return images

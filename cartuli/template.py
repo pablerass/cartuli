@@ -18,6 +18,8 @@ ParameterKey = str
 ParameterValue = Image.Image | str
 
 
+# TODO: Implement multiline and rich formatted text template values support
+
 def _image_to_uri(image: Image.Image | str | Path, encoding: str = 'UTF-8') -> str:
     if isinstance(image, str):
         image = Path(image)
@@ -31,12 +33,18 @@ def _image_to_uri(image: Image.Image | str | Path, encoding: str = 'UTF-8') -> s
     return f"data:image/png;base64,{base64.b64encode(image_buffer.getvalue()).decode(encoding)}"
 
 
+def _get_innermost_tspan(text_element: etree._Element) -> etree._Element:
+    return next(text_element.iterchildren("*", reversed=True))
+
+
 def _set_template_text(text_element: etree._Element, value: str):
-    text_element.getchildren()[0].text = value
+    # TODO: Find the last tspan to set the text at
+    _get_innermost_tspan(text_element).text = value
 
 
 def _get_template_text(text_element: etree._Element) -> str:
-    return text_element.getchildren()[0].text
+    # TODO: Find the last tspan to set the text at
+    return _get_innermost_tspan(text_element).text
 
 
 def _set_template_image(image_element: etree._Element, value: Image.Image, encoding: str = 'UTF-8'):
@@ -52,6 +60,7 @@ def _get_template_image(image_element: etree._Element, encoding: str = 'UTF-8') 
 
 # TUNE: Probably this should not be implemented here
 def svg_file_to_image(svg_file: str | Path, dpi: int = DEFAULT_SVG_DPI) -> Image.Image:
+    # TUNE: CairoSVG does different things than Inkspace
     if isinstance(svg_file, str):
         svg_file = Path(svg_file)
 
@@ -64,6 +73,15 @@ def svg_content_to_image(svg_content: str, dpi: int = DEFAULT_SVG_DPI) -> Image.
     image_data = svg2png(bytestring=svg_content, dpi=dpi)
 
     return Image.open(io.BytesIO(image_data))
+
+
+def _is_text_element(element: etree._Element) -> bool:
+    return (element.tag.endswith('text') or
+            element.tag.endswith('tspan'))
+
+
+def _is_image_element(element: etree._Element) -> bool:
+    return (element.tag.endswith('image'))
 
 
 class Template:
@@ -87,7 +105,8 @@ class Template:
 
             if element is None:
                 raise ValueError(f"Parameter '{parameter}' not found in template")
-            if not (element.tag.endswith('image') or element.tag.endswith('text')):
+            # TODO: Add tspan also as possible tag value
+            if not (_is_image_element(element) or _is_text_element(element)):
                 raise ValueError(f"Parameter '{parameter}' element '{element.tag}' is unsupported")
 
         self.__parameters = tuple(parameters)
@@ -125,13 +144,13 @@ class Template:
 
             if element is None:
                 raise ValueError(f"Parameter '{parameter}' not found in template")
-            if element.tag.endswith('image'):
+            if _is_image_element(element):
                 if isinstance(value, Image.Image):
                     _set_template_image(element, value, encoding=self.__encoding)
                 else:
                     raise ValueError((f"Parameter '{parameter}' value '{value}' is invalid "
                                       f"for '{element.tag}'"))
-            if element.tag.endswith('text'):
+            if _is_text_element(element):
                 if isinstance(value, str):
                     _set_template_text(element, value)
                 else:
@@ -160,9 +179,9 @@ class Template:
             element = content_tree.find(f".//*[@id='{parameter}']")
             if element is None:
                 raise ValueError(f"parameter '{parameter}' not found in content")
-            if element.tag.endswith('image'):
+            if _is_image_element(element):
                 value = _get_template_image(element)
-            if element.tag.endswith('text'):
+            if _is_text_element(element):
                 value = _get_template_text(element)
 
             values |= {parameter: value}

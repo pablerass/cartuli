@@ -126,12 +126,7 @@ def test_definition(random_image_file):
     assert definition.sheets['cards', ].print_margin == 3*mm
 
 
-def test_filters(random_image_file):
-    # TODO: Implement filters testing
-    pass
-
-
-def test_convert_dict_of_lists_to_list_of_dicts():
+def test_template_parameters_convert_dict_of_lists_to_list_of_dicts():
     assert _TemplateParameters._convert_dict_of_lists_to_list_of_dicts({
         'a': [1, 2, 3, 4],
         'b': [5, 6, 7, 8]
@@ -141,3 +136,8 @@ def test_convert_dict_of_lists_to_list_of_dicts():
         {'a': 3, 'b': 7},
         {'a': 4, 'b': 8},
     ]
+
+
+# TODO: Test load template parameters from yml or CSV file
+def test_template_parameters_load_parameter_from_file():
+    pass
