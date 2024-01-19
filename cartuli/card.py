@@ -1,8 +1,8 @@
 """Card module."""
 from pathlib import Path
+from PIL import Image
 
 from carpeta import register_id_extractor
-from PIL import Image
 
 from .measure import Size
 
@@ -13,8 +13,8 @@ class CardImage:
     DEFAULT_BLEED = 0.0
 
     def __init__(self, image: Path | str | Image.Image, /, size: Size, bleed: float = DEFAULT_BLEED, name: str = ''):
-        self.__image_path = None
         self.__image = None
+        self.__image_path = None
         self.__resolution = None
 
         if isinstance(image, str):
@@ -27,7 +27,7 @@ class CardImage:
             if hasattr(image, 'filename'):
                 self.__image_path = Path(image.filename)
         else:
-            raise TypeError(f"{type(image)} is not a valid image")
+            raise TypeError(f"'{type(image)}' instance is not a valid image")
 
         self.__size = size
         self.__bleed = bleed
@@ -72,7 +72,7 @@ class CardImage:
     @name.setter
     def name(self, name: str):
         if self.__name:
-            raise AttributeError("can't set attribute 'name' if already set")
+            raise AttributeError("Can't set attribute 'name' if already set")
         self.__name = name
 
     def __eq__(self, other) -> bool:
@@ -99,15 +99,15 @@ class Card:
 
         if isinstance(front, Path) or isinstance(front, str) or isinstance(front, Image.Image):
             if size is None:
-                raise ValueError("size must be specified when not using a CardImage as front")
+                raise ValueError("Size must be specified when not using a CardImage as front")
             front = CardImage(front, size)
         elif isinstance(front, CardImage):
             if size is None:
                 size = front.size
             elif size != front.size:
-                raise ValueError("front image is not of the same size as the card")
+                raise ValueError("Front image is not of the same size as the card")
         else:
-            raise TypeError(f"{type(front)} is not a valid image")
+            raise TypeError(f"'{type(front)}' instance is not a valid image")
 
         if back is not None:
             # TUNE: This code is duplicated with back setter
@@ -115,9 +115,9 @@ class Card:
                 back = CardImage(back, size)
             elif isinstance(back, CardImage):
                 if size != back.size:
-                    raise ValueError("back image is not of the same size as the card")
+                    raise ValueError("Back image is not of the same size as the card")
             else:
-                raise TypeError(f"{type(back)} is not a valid image")
+                raise TypeError(f"'{type(back)}' instance is not a valid image")
 
         self.__size = size
         self.__front = front
@@ -144,15 +144,15 @@ class Card:
     @back.setter
     def back(self, back: Path | str | CardImage | Image.Image):
         if self.__back is not None:
-            raise AttributeError("can't set attribute 'back' if already set")
+            raise AttributeError("Can't set attribute 'back' if already set")
 
         if isinstance(back, Path) or isinstance(back, str) or isinstance(back, Image.Image):
             back = CardImage(back, self.__size)
         elif isinstance(back, CardImage):
             if self.__size != back.size:
-                raise ValueError("back is not of the same size as the card")
+                raise ValueError("Back is not of the same size as the card")
         else:
-            raise TypeError(f"{type(back)} is not a valid image")
+            raise TypeError(f"'{type(back)}' instance is not a valid image")
         self.__back = back
 
     def __update_card_image_names(self, name: str):
@@ -171,7 +171,7 @@ class Card:
     @name.setter
     def name(self, name: str):
         if self.__name:
-            raise AttributeError("can't set attribute 'name' if already set")
+            raise AttributeError("Can't set attribute 'name' if already set")
         self.__update_card_image_names(name)
         self.__name = name
 

@@ -3,3 +3,5 @@ opencv-python==4.*
 pillow==10.*
 pyyaml==6.*
 carpeta==0.1.0a2
+cairosvg==2.*
+lxml==4.*

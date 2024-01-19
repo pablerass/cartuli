@@ -1,6 +1,6 @@
 import pytest
 
-from cartuli.definition import Definition
+from cartuli.definition import Definition, _TemplateParameters
 from cartuli.filters import NullFilter, InpaintFilter
 from cartuli.measure import Size, STANDARD, A4, mm
 
@@ -37,10 +37,16 @@ def test_decks_definition():
     definition_dict = {
         'decks': {
             'cards': {
-                'size': 'STANDARD'
+                'size': 'STANDARD',
+                'front': {
+                    'images': "cards/*.png"
+                },
             },
             'tokens': {
-                'size': '(44*mm,75*mm)'
+                'size': '(44*mm,75*mm)',
+                'front': {
+                    'images': "tokens/*.png"
+                },
             }
         }
     }
@@ -49,6 +55,22 @@ def test_decks_definition():
     assert definition.decks[1].name == 'tokens'
     assert definition.decks[0].size == STANDARD
     assert definition.decks[1].size == Size(44*mm, 75*mm)
+
+
+def test_template_parameters_definition():
+    definition_dict = {
+        'template_parameters': {
+            'name': {
+                'key1': "value1",
+                'key2': "value2"
+            }
+        }
+    }
+    definition = Definition(definition_dict)
+    assert definition._template_parameters['name'] == {
+        'key1': "value1",
+        'key2': "value2"
+    }
 
 
 def test_filters_definition():
@@ -60,8 +82,8 @@ def test_filters_definition():
         }
     }
     definition = Definition(definition_dict)
-    assert definition.filters['front'] == InpaintFilter()
-    assert definition.filters['back'] == NullFilter()
+    assert definition._filters['front'] == InpaintFilter()
+    assert definition._filters['back'] == NullFilter()
 
 
 def test_definition(random_image_file):
@@ -104,6 +126,18 @@ def test_definition(random_image_file):
     assert definition.sheets['cards', ].print_margin == 3*mm
 
 
-def test_filters(random_image_file):
-    # TODO: Implement filters testing
+def test_template_parameters_convert_dict_of_lists_to_list_of_dicts():
+    assert _TemplateParameters._convert_dict_of_lists_to_list_of_dicts({
+        'a': [1, 2, 3, 4],
+        'b': [5, 6, 7, 8]
+    }) == [
+        {'a': 1, 'b': 5},
+        {'a': 2, 'b': 6},
+        {'a': 3, 'b': 7},
+        {'a': 4, 'b': 8},
+    ]
+
+
+# TODO: Test load template parameters from yml or CSV file
+def test_template_parameters_load_parameter_from_file():
     pass

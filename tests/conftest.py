@@ -27,6 +27,14 @@ def fixture_file() -> Path:
 
 
 @pytest.fixture
+def fixture_content() -> str:
+    def path(rel_path: Path | str):
+        return (TEST_FILES_PATH / rel_path).read_text()
+
+    return path
+
+
+@pytest.fixture
 def random_image() -> Image.Image:
     def create_image(size: Size = None):
         aspect_ratio = random.choice([(3, 2), (4, 3)])

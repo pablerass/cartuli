@@ -62,12 +62,12 @@ def main(args=None):
     # TODO: Find a better way to manage definition relative paths
     os.chdir(definition_dir)
 
-    cards_filter = None
+    files_filter = None
     if args.cards is not None:
-        cards_regex = re.compile(r'^.*(' + '|'.join(args.cards) + r').*$')
-        cards_filter = lambda x: cards_regex.match(x)   # noqa: E731
+        files_regex = re.compile(r'^.*(' + '|'.join(args.cards) + r').*$')
+        files_filter = lambda x: not files_regex.match(x)   # noqa: E731
 
-    definition = Definition.from_file(args.definition_file, cards_filter=cards_filter)
+    definition = Definition.from_file(args.definition_file, files_filter=files_filter)
     logger.info(f"Loaded {args.definition_file} with {len(definition.decks)} decks")
     sheet_dir = definition_dir / 'sheets'
     for deck_names, sheet in definition.sheets.items():

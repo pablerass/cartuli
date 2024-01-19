@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import logging
 
 from abc import ABC, abstractmethod
@@ -13,6 +15,22 @@ class Filter(ABC):
     @abstractmethod
     def apply(self, card_image: CardImage) -> CardImage:
         pass    # pragma: no cover
+
+    @classmethod
+    def from_dict(cls, filter_dict: dict) -> Filter:
+        if not filter_dict:
+            return NullFilter()
+        elif len(filter_dict) == 1:
+            filter_name = list(filter_dict)[0]
+            filter_class = globals()[snake_to_class(filter_name) + 'Filter']
+            filter_args = {}
+            if filter_dict[filter_name] is not None:
+                filter_args = {k: from_str(v) for k, v in filter_dict[filter_name].items()}
+            return filter_class(**filter_args)
+        else:
+            return MultipleFilter(
+                *(cls.from_dict({i[0]: i[1]}) for i in filter_dict.items())
+            )
 
 
 @dataclass(frozen=True)
@@ -102,19 +120,3 @@ def snake_to_class(snake_case_str):
     words = snake_case_str.split('_')
     camel_case_str = ''.join(word.capitalize() for word in words)
     return camel_case_str
-
-
-def from_dict(filter_dict: dict) -> Filter:
-    if not filter_dict:
-        return NullFilter()
-    elif len(filter_dict) == 1:
-        filter_name = list(filter_dict)[0]
-        filter_class = globals()[snake_to_class(filter_name) + 'Filter']
-        filter_args = {}
-        if filter_dict[filter_name] is not None:
-            filter_args = {k: from_str(v) for k, v in filter_dict[filter_name].items()}
-        return filter_class(**filter_args)
-    else:
-        return MultipleFilter(
-            *(from_dict({i[0]: i[1]}) for i in filter_dict.items())
-        )
