@@ -92,7 +92,7 @@ class Sheet(object):
 
     # TODO: Add minimum crop mark length
     @property
-    def margin(self) -> float:
+    def margin(self) -> Size:
         """Return sheet margin to center content."""
         if self.__margin is None:
             horizontal_cards = self.cards_per_page.width

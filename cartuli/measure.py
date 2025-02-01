@@ -57,6 +57,16 @@ class Size:
 
         raise ValueError(f'invalid literal for Size value: \'{s}\'')
 
+    def __add__(self, other: float | int | Size) -> Size:
+        if not isinstance(other, Size):
+            other = Size(other, other)
+        return self.__class__(self.width + other.width, self.height + other.height)
+
+    def __sub__(self, other: float | int | Size) -> Size:
+        if not isinstance(other, Size):
+            other = Size(other, other)
+        return self.__class__(self.width - other.width, self.height - other.height)
+
     def __mul__(self, other: float | int) -> Size:
         return self.__class__(self.width * other, self.height * other)
 
@@ -79,6 +89,22 @@ class Point:
 
     def __iter__(self):
         return (v for v in (self.x, self.y))
+
+    def __add__(self, other: float | int | Size) -> Size:
+        if not isinstance(other, Size):
+            other = Size(other, other)
+        return self.__class__(self.x + other.x, self.y + other.y)
+
+    def __sub__(self, other: float | int | Size) -> Size:
+        if not isinstance(other, Size):
+            other = Size(other, other)
+        return self.__class__(self.x - other.x, self.y - other.y)
+
+    def __mul__(self, other: float | int) -> Size:
+        return self.__class__(self.x * other, self.y * other)
+
+    def __truediv__(self, other: float | int) -> Size:
+        return self.__class__(self.x / other, self.y / other)
 
 
 @dataclass(frozen=True, order=True)
