@@ -3,7 +3,7 @@ import logging
 import reportlab.graphics.shapes as shapes
 
 from functools import lru_cache, partial
-from math import sin, cos, radians
+from math import radians
 from pathlib import Path
 from reportlab.lib.colors import transparent, white
 from reportlab.lib.utils import ImageReader
@@ -13,21 +13,25 @@ from .measure import Line, Point, mm
 from .sheet import Sheet
 
 
+DEFAULT_REGISTRATION_MARK_SIZE = 5*mm
+DEFAULT_REGISTRATION_MARK_MARGIN = 0.5*mm
+DEFAULT_MARK_WIDTH = 0.5
+
+
 @lru_cache
-def _rotate(origin: Point, point: Point, degrees: float) -> Point:
+def _rotate(point: Point, origin: Point, degrees: float) -> Point:
     angle = radians(degrees)
-    x = origin.x + cos(angle) * (point.x - origin.x) - sin(angle) * (point.y - origin.y)
-    y = origin.y + sin(angle) * (point.x - origin.x) + cos(angle) * (point.y - origin.y)
-    return Point(x, y)
+    return origin.rotate(angle, origin)
 
 
-def draw_registration_mark(c: canvas.Canvas, center: Point, size: float = 10*mm,
-                           stroke_width: float = 0.5) -> None:
+def draw_registration_mark(c: canvas.Canvas, center: Point,
+                           size: float = DEFAULT_REGISTRATION_MARK_SIZE,
+                           stroke_width: float = DEFAULT_MARK_WIDTH,
+                           margin: float = DEFAULT_REGISTRATION_MARK_MARGIN) -> None:
     # TODO: Add magin to white background
     draw = shapes.Drawing(size, size)
 
-    # TUNE: Set background directly to drawing wihtout rectangle, if possible...
-    draw.add(shapes.Rect(0, 0, size, size, strokeColor=transparent, fillColor=white))
+    draw.add(shapes.Rect(-margin, -margin, size + 2*margin, size + 2*margin, strokeColor=transparent, fillColor=white))
 
     # Main cross
     draw.add(shapes.Line(0, size/2, size, size/2, strokeWidth=stroke_width))
@@ -65,13 +69,13 @@ def draw_registration_mark(c: canvas.Canvas, center: Point, size: float = 10*mm,
     draw.drawOn(c, center.x - size/2, center.y - size/2)
 
 
-def draw_crop_mark(c: canvas.Canvas, line: Line, stroke_width: float = 0.5) -> None:
+def draw_crop_mark(c: canvas.Canvas, line: Line, stroke_width: float = DEFAULT_MARK_WIDTH) -> None:
     c.setLineWidth(stroke_width)
     c.line(*list(line))
 
 
-def _draw_marks(c: canvas.Canvas, sheet: Sheet, registration_size: float = 10*mm,
-                stroke_width: float = 0.5) -> None:
+def _draw_marks(c: canvas.Canvas, sheet: Sheet, registration_size: float = DEFAULT_REGISTRATION_MARK_SIZE,
+                stroke_width: float = DEFAULT_MARK_WIDTH) -> None:
     # Crop marks
     draw_crop = partial(draw_crop_mark, c, stroke_width=stroke_width)
     for line in sheet.crop_marks:

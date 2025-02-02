@@ -29,3 +29,5 @@ test:
 test-coverage:
 	coverage run --source cartuli -m pytest
 	coverage report -m
+
+test-all: lint test-coverage
