@@ -9,7 +9,7 @@ import sys
 from carpeta import ProcessTracer, ImageHandler, trace_output
 from pathlib import Path
 
-from .definition import Definition
+from .definition import load_cartulifile, DEFAULT_CARTULIFILE
 from .output import sheet_pdf_output
 
 
@@ -18,7 +18,7 @@ def parse_args(args: list[str] = None) -> argparse.Namespace:
         args = sys.argv[1:]
 
     parser = argparse.ArgumentParser(description='Create a PDF with a list of images')
-    parser.add_argument('definition_file', type=Path, default=Definition.DEFAULT_CARTULIFILE,
+    parser.add_argument('definition_file', type=Path, default=DEFAULT_CARTULIFILE,
                         nargs='?', help='Cartulifile to be used')
     parser.add_argument('-c', '--cards', type=str, nargs='*', default=(),
                         help="Cards to include supporting shell patterns")
@@ -67,7 +67,7 @@ def main(args=None):
         files_regex = re.compile(r'^.*(' + '|'.join(args.cards) + r').*$')
         files_filter = lambda x: not files_regex.match(x)   # noqa: E731
 
-    definition = Definition.from_file(args.definition_file, files_filter=files_filter)
+    definition = load_cartulifile(args.definition_file, files_filter=files_filter)
     logger.info(f"Loaded {args.definition_file} with {len(definition.decks)} decks")
     sheet_dir = definition_dir / 'sheets'
     for deck_names, sheet in definition.sheets.items():

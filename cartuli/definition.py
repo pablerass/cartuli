@@ -128,8 +128,6 @@ class _TemplateParameters:
 class Definition:
     """Definition."""
 
-    DEFAULT_CARTULIFILE = 'Cartulifile.yml'
-
     def __init__(self, values: dict, /, files_filter: FilesFilter = None):
         self.__values = Definition._validate(values)
         self.__decks = None
@@ -145,20 +143,6 @@ class Definition:
     @property
     def _values(self) -> dict:
         return self.__values
-
-    @classmethod
-    def from_file(cls, path: Path | str = 'Cartulifile.yml', /, files_filter: FilesFilter = None) -> Definition:
-        if isinstance(path, str):
-            path = Path(path)
-
-        if not isinstance(path, Path):
-            raise TypeError(f"{type(path)} is not a valid path")
-
-        if path.is_dir():
-            path = path / cls.DEFAULT_CARTULIFILE
-
-        with path.open(mode='r') as file:
-            return cls(yaml.safe_load(file), files_filter)
 
     def _validate(values: dict) -> dict:
         # TODO: Implement validation
@@ -320,3 +304,20 @@ class Definition:
                 self.__filters[name] = Filter.from_dict(filter_definition)
 
         return self.__filters
+
+
+DEFAULT_CARTULIFILE = 'Cartulifile.yml'
+
+
+def load_cartulifile(path: str | Path = DEFAULT_CARTULIFILE, files_filter: FilesFilter = None) -> Definition:
+    if isinstance(path, str):
+        path = Path(path)
+
+    if not isinstance(path, Path):
+        raise TypeError(f"{type(path)} is not a valid path")
+
+    if path.is_dir():
+        path = path / DEFAULT_CARTULIFILE
+
+    with path.open(mode='r') as file:
+        return Definition(yaml.safe_load(file), files_filter)
