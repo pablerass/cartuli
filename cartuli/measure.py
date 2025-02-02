@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from functools import partial
-from math import isclose
+from math import isclose, sin, cos
 from reportlab.lib import pagesizes
 from reportlab.lib.units import mm, cm, inch
 from typing import Final
@@ -35,9 +35,6 @@ class Size:
     width: float | int
     height: float | int
 
-    def __eq__(self, other):
-        return measure_is_close(self.width, other.width) and measure_is_close(self.height, other.height)
-
     def __str__(self):
         return f"({self.width}, {self.height})"
 
@@ -57,6 +54,19 @@ class Size:
 
         raise ValueError(f'invalid literal for Size value: \'{s}\'')
 
+    def __eq__(self, other):
+        return measure_is_close(self.width, other.width) and measure_is_close(self.height, other.height)
+
+    def __add__(self, other: float | int | Size) -> Size:
+        if not isinstance(other, Size):
+            other = Size(other, other)
+        return self.__class__(self.width + other.width, self.height + other.height)
+
+    def __sub__(self, other: float | int | Size) -> Size:
+        if not isinstance(other, Size):
+            other = Size(other, other)
+        return self.__class__(self.width - other.width, self.height - other.height)
+
     def __mul__(self, other: float | int) -> Size:
         return self.__class__(self.width * other, self.height * other)
 
@@ -71,14 +81,37 @@ class Point:
     x: float | int
     y: float | int
 
-    def __eq__(self, other):
-        return measure_is_close(self.x, other.x) and measure_is_close(self.y, other.y)
-
     def __str__(self):
         return f"({self.x}, {self.y})"
 
     def __iter__(self):
         return (v for v in (self.x, self.y))
+
+    def __eq__(self, other):
+        return measure_is_close(self.x, other.x) and measure_is_close(self.y, other.y)
+
+    def __add__(self, other: float | int | Point) -> Point:
+        if not isinstance(other, Point):
+            other = Point(other, other)
+        return self.__class__(self.x + other.x, self.y + other.y)
+
+    def __sub__(self, other: float | int | Point) -> Point:
+        if not isinstance(other, Point):
+            other = Point(other, other)
+        return self.__class__(self.x - other.x, self.y - other.y)
+
+    def __mul__(self, other: float | int) -> Point:
+        return self.__class__(self.x * other, self.y * other)
+
+    def __truediv__(self, other: float | int) -> Point:
+        return self.__class__(self.x / other, self.y / other)
+
+    def rotate(self, angle: float, origin: Point = None) -> Point:
+        if origin is None:
+            origin = Point(0, 0)
+        x = origin.x + cos(angle) * (self.x - origin.x) - sin(angle) * (self.y - origin.y)
+        y = origin.y + sin(angle) * (self.x - origin.x) + cos(angle) * (self.y - origin.y)
+        return Point(x, y)
 
 
 @dataclass(frozen=True, order=True)
@@ -88,15 +121,15 @@ class Line:
     a: Point
     b: Point
 
-    def __eq__(self, other):
-        return ((self.a == other.a) and (self.b == other.b) or
-                (self.a == other.b) and (self.b == other.a))
-
     def __str__(self):
         return f"{self.a} <-> {self.b}"
 
     def __iter__(self):
         return (v for v in (self.a.x, self.a.y, self.b.x, self.b.y))
+
+    def __eq__(self, other):
+        return ((self.a == other.a) and (self.b == other.b) or
+                (self.a == other.b) and (self.b == other.a))
 
 
 class Coordinates(Point):
