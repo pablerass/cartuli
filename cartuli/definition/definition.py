@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import logging
-import yaml
 
 from collections import defaultdict
 from collections.abc import Callable
@@ -14,12 +13,12 @@ from pathlib import Path
 from PIL import Image
 from typing import Iterable
 
-from .card import CardImage, Card
-from .deck import Deck
-from .filters import Filter, NullFilter
-from .measure import Size, from_str as measure_from_str
-from .sheet import Sheet
-from .template import svg_file_to_image, Template, ParameterKey, ParameterValue
+from ..card import CardImage, Card
+from ..deck import Deck
+from ..filters import Filter, NullFilter
+from ..measure import Size, from_str as measure_from_str
+from ..sheet import Sheet
+from ..template import svg_file_to_image, Template, ParameterKey, ParameterValue
 
 
 _CONCURRENT_PROCESSES = cpu_count() - 1
@@ -304,20 +303,3 @@ class Definition:
                 self.__filters[name] = Filter.from_dict(filter_definition)
 
         return self.__filters
-
-
-DEFAULT_CARTULIFILE = 'Cartulifile.yml'
-
-
-def load_cartulifile(path: str | Path = DEFAULT_CARTULIFILE, files_filter: FilesFilter = None) -> Definition:
-    if isinstance(path, str):
-        path = Path(path)
-
-    if not isinstance(path, Path):
-        raise TypeError(f"{type(path)} is not a valid path")
-
-    if path.is_dir():
-        path = path / DEFAULT_CARTULIFILE
-
-    with path.open(mode='r') as file:
-        return Definition(yaml.safe_load(file), files_filter)
