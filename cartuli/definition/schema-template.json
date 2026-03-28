@@ -1,0 +1,9 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "image_template": {
+    "file": { "type": "string" },
+    "parameters": { "type": "string" },
+    "name_parameter": { "type": "string" }
+  }
+}

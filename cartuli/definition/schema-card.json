@@ -1,0 +1,120 @@
+
+
+
+
+
+
+         "front": {
+            "type": "object",
+            "properties": {
+              "bleed": { "type": "string" },
+              "template": {
+                "type": "object",
+                "properties": {
+                  "file": { "type": "string" },
+                  "parameters": { "type": "string" },
+                  "name_parameter": { "type": "string" }
+                },
+              },
+            },
+            "required": ["template", "bleed"]
+          },
+          "back": {
+          },
+          "default_back": {
+            "type": "object",
+            "properties": {
+              "image": { "type": "string" },
+              "bleed": { "type": "string", "pattern": "^\\d+\\*mm$" }
+            },
+            "required": ["image", "bleed"]
+          }
+        },
+        "required": ["name", "size", "front"]
+      }
+    },      
+
+
+        },
+    "properties": {
+    "cards": {
+        "type": "object",
+        "properties": {
+          "size": { "type": "string", "pattern": "^\\(\\d+\\*mm,\\d+\\*mm\\)$" },
+          "front": {
+            "type": "object",
+            "properties": {
+              "template": {
+                "type": "object",
+                "properties": {
+                  "file": { "type": "string" },
+                  "parameters": { "type": "string" },
+                  "name_parameter": { "type": "string" }
+                },
+                "required": ["file", "parameters", "name_parameter"]
+              },
+              "bleed": { "type": "string", "pattern": "^\\d+\\*mm$" }
+            },
+            "required": ["template", "bleed"]
+          },
+          "default_back": {
+            "type": "object",
+            "properties": {
+              "image": { "type": "string" },
+              "bleed": { "type": "string", "pattern": "^\\d+\\*mm$" }
+            },
+            "required": ["image", "bleed"]
+          }
+        },
+        "required": ["size", "front", "default_back"]
+      },
+      "tokens-red": {
+        "type": "object",
+        "properties": {
+          "size": { "type": "string", "pattern": "^\\(\\d+\\*mm,\\d+\\*mm\\)$" },
+          "front": {
+            "type": "object",
+            "properties": {
+              "template": {
+                "type": "object",
+                "properties": {
+                  "file": { "type": "string" },
+                  "parameters": { "type": "string" },
+                  "name_parameter": { "type": "string" }
+                },
+                "required": ["file", "parameters", "name_parameter"]
+              },
+              "bleed": { "type": "string", "pattern": "^\\d+\\*mm$" }
+            },
+            "required": ["template", "bleed"]
+          }
+        },
+        "required": ["size", "front"]
+      },
+      "tokens-blue": {
+        "type": "object",
+        "properties": {
+          "size": { "type": "string", "pattern": "^\\(\\d+\\*mm,\\d+\\*mm\\)$" },
+          "front": {
+            "type": "object",
+            "properties": {
+              "template": {
+                "type": "object",
+                "properties": {
+                  "file": { "type": "string" },
+                  "parameters": { "type": "string" },
+                  "name_parameter": { "type": "string" }
+                },
+                "required": ["file", "parameters", "name_parameter"]
+              },
+              "bleed": { "type": "string", "pattern": "^\\d+\\*mm$" }
+            },
+            "required": ["template", "bleed"]
+          }
+        },
+        "required": ["size", "front"]
+      }
+    },
+    "required": ["cards", "tokens-red", "tokens-blue"]
+  }
+}

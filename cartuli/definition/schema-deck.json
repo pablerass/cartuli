@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "decks": {
+    "type": "array",
+    "items": {
+      "type": "object",
+       "properties": {
+         "size": { "type": "string" },
+         "copies": { "type": "number" },
+         "cards": {
+         }
+       },
+       "required": ["cards"]
+     }
+  }
+}

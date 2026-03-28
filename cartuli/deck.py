@@ -1,6 +1,6 @@
 """Deck module."""
 from pathlib import Path
-from typing import Iterable
+from collections.abc import Iterable
 
 from .card import Card, CardImage
 from .measure import Size

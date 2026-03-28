@@ -1,6 +1,6 @@
 """Sheet module."""
 from math import ceil
-from typing import Iterable
+from collections.abc import Iterable
 
 from .card import Card
 from .measure import Coordinates, Point, Size, Line, A4, mm, inch

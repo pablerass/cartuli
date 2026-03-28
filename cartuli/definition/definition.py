@@ -4,14 +4,13 @@ from __future__ import annotations
 import logging
 
 from collections import defaultdict
-from collections.abc import Callable
+from collections.abc import Callable, Iterable
 from copy import deepcopy
 from glob import glob
 from itertools import chain, groupby
 from multiprocessing import Pool, cpu_count
 from pathlib import Path
 from PIL import Image
-from typing import Iterable
 
 from ..card import CardImage, Card
 from ..deck import Deck

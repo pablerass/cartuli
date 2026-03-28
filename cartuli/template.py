@@ -4,11 +4,11 @@ import base64
 import io
 
 from cairosvg import svg2png
+from collections.abc import Iterable
 from copy import deepcopy
 from lxml import etree
 from pathlib import Path
 from PIL import Image
-from typing import Iterable
 
 
 DEFAULT_SVG_DPI = 300

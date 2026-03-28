@@ -1,0 +1,119 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "template_parameters": {
+      "type": "object",
+      "properties": {
+        "pokemon": {
+          "type": "object",
+          "properties": {
+            "image": { "type": "string", "pattern": "^images/.*\\.png$" },
+            "name": { "type": "string", "pattern": "^names/.*\\.txt$" }
+          },
+          "required": ["image", "name"]
+        }
+      },
+      "required": ["pokemon"]
+    },
+    "decks": {
+      "type": "object",
+      "properties": {
+        "cards": {
+          "type": "object",
+          "properties": {
+            "size": { "type": "string", "pattern": "^\\(\\d+\\*mm,\\d+\\*mm\\)$" },
+            "front": {
+              "type": "object",
+              "properties": {
+                "template": {
+                  "type": "object",
+                  "properties": {
+                    "file": { "type": "string" },
+                    "parameters": { "type": "string" },
+                    "name_parameter": { "type": "string" }
+                  },
+                  "required": ["file", "parameters", "name_parameter"]
+                },
+                "bleed": { "type": "string", "pattern": "^\\d+\\*mm$" }
+              },
+              "required": ["template", "bleed"]
+            },
+            "default_back": {
+              "type": "object",
+              "properties": {
+                "image": { "type": "string" },
+                "bleed": { "type": "string", "pattern": "^\\d+\\*mm$" }
+              },
+              "required": ["image", "bleed"]
+            }
+          },
+          "required": ["size", "front", "default_back"]
+        },
+        "tokens-red": {
+          "type": "object",
+          "properties": {
+            "size": { "type": "string", "pattern": "^\\(\\d+\\*mm,\\d+\\*mm\\)$" },
+            "front": {
+              "type": "object",
+              "properties": {
+                "template": {
+                  "type": "object",
+                  "properties": {
+                    "file": { "type": "string" },
+                    "parameters": { "type": "string" },
+                    "name_parameter": { "type": "string" }
+                  },
+                  "required": ["file", "parameters", "name_parameter"]
+                },
+                "bleed": { "type": "string", "pattern": "^\\d+\\*mm$" }
+              },
+              "required": ["template", "bleed"]
+            }
+          },
+          "required": ["size", "front"]
+        },
+        "tokens-blue": {
+          "type": "object",
+          "properties": {
+            "size": { "type": "string", "pattern": "^\\(\\d+\\*mm,\\d+\\*mm\\)$" },
+            "front": {
+              "type": "object",
+              "properties": {
+                "template": {
+                  "type": "object",
+                  "properties": {
+                    "file": { "type": "string" },
+                    "parameters": { "type": "string" },
+                    "name_parameter": { "type": "string" }
+                  },
+                  "required": ["file", "parameters", "name_parameter"]
+                },
+                "bleed": { "type": "string", "pattern": "^\\d+\\*mm$" }
+              },
+              "required": ["template", "bleed"]
+            }
+          },
+          "required": ["size", "front"]
+        }
+      },
+      "required": ["cards", "tokens-red", "tokens-blue"]
+    },
+    "outputs": {
+      "type": "object",
+      "properties": {
+        "sheet": {
+          "type": "object",
+          "properties": {
+            "size": { "type": "string", "pattern": "^\\(\\d+\\*cm,\\d+\\*cm\\)$" },
+            "padding": { "type": "string", "pattern": "^\\d+\\*mm$" },
+            "print_margin": { "type": "string", "pattern": "^\\d+\\*cm$" }
+          },
+          "required": ["size", "padding", "print_margin"]
+        }
+      },
+      "required": ["sheet"]
+    }
+  },
+  "required": ["template_parameters", "decks", "outputs"]
+}
